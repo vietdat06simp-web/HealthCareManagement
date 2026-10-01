@@ -487,3 +487,6 @@ HealthCareManagement.Web/wwwroot/uploads/*
 
 # File cấu hình cục bộ (tránh lộ mật khẩu SQL Server cá nhân nếu có)
 appsettings.Development.json
+
+# Không đẩy cấu hình cục bộ của từng máy lên Git
+HealthCareManagement.Web/appsettings.Development.json
