@@ -1,0 +1,918 @@
+@{
+    ViewData["Title"] = "Hồ Sơ Y Tế - Bệnh Án Điện Tử & Cận Lâm Sàng";
+}
+
+@section Styles {
+    <!-- Google Fonts: Inter, Plus Jakarta Sans & Material Symbols Outlined -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN with non-conflicting config for Material Design Tokens -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: {
+                preflight: false,
+                visibility: false,
+            },
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#006194",
+                        "primary-container": "#007bb9",
+                        "on-primary": "#ffffff",
+                        "on-primary-container": "#fdfcff",
+                        "primary-fixed": "#cce5ff",
+                        "primary-fixed-dim": "#93ccff",
+                        "secondary": "#00687a",
+                        "secondary-container": "#57dffe",
+                        "secondary-fixed": "#acedff",
+                        "secondary-fixed-dim": "#4cd7f6",
+                        "on-secondary-fixed-variant": "#004e5c",
+                        "tertiary": "#006947",
+                        "tertiary-container": "#00855b",
+                        "tertiary-fixed": "#6ffbbe",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "on-tertiary-fixed": "#002113",
+                        "surface": "#f8f9ff",
+                        "surface-dim": "#cbdbf5",
+                        "surface-bright": "#f8f9ff",
+                        "surface-container": "#e5eeff",
+                        "surface-container-low": "#eff4ff",
+                        "surface-container-high": "#dce9ff",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#0b1c30",
+                        "on-surface-variant": "#3f4850",
+                        "outline": "#707881",
+                        "outline-variant": "#bfc7d2",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a"
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="stylesheet" href="~/css/modules/medical-records.css" asp-append-version="true" />
+}
+
+<div class="flex flex-col w-full gap-5">
+    <!-- 1. BREADCRUMB & SECURITY COMPLIANCE HEADER -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
+        <nav aria-label="Breadcrumb" class="flex items-center gap-1.5 font-label-md text-slate-500 overflow-x-auto whitespace-nowrap py-1">
+            <a asp-controller="Home" asp-action="Index" class="hover:text-primary transition-colors cursor-pointer flex items-center gap-1 text-slate-500 text-decoration-none">
+                <span class="material-symbols-outlined text-[16px]">home</span>
+                Trang chủ
+            </a>
+            <span class="text-slate-300">/</span>
+            <a asp-controller="MedicalRecords" asp-action="Index" class="hover:text-primary transition-colors cursor-pointer text-slate-500 text-decoration-none">
+                Hồ sơ y tế
+            </a>
+            <span class="text-slate-300">/</span>
+            <span class="text-primary font-semibold">Lịch sử khám bệnh &amp; Chẩn đoán</span>
+        </nav>
+
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-high shadow-xs self-start sm:self-auto flex-shrink-0">
+            <span class="material-symbols-outlined text-[16px] text-tertiary" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+            <span class="font-label-sm text-on-surface font-semibold">Chứng nhận hồ sơ số y tế HL7/FHIR</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+        </div>
+    </div>
+
+    <!-- 2. PRIMARY CONTROL & MULTI-CRITERIA FILTER BAR -->
+    <div class="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-slate-200/90">
+        <!-- Top Header Row: Title & Subtitle on Left, Action Buttons on Right -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-sky-600 via-sky-500 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-sky-600/20 shrink-0">
+                    <span class="material-symbols-outlined text-[26px]">folder_shared</span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-headline-sm text-slate-900 tracking-tight m-0 text-lg md:text-xl font-bold">Hồ Sơ Bệnh Án Điện Tử</h1>
+                        <span id="encounterCountBadge" class="px-2.5 py-0.5 rounded-full bg-sky-100 text-[#0284C7] font-label-sm font-bold text-xs border border-sky-200">12 đợt khám</span>
+                    </div>
+                    <p class="font-body-sm text-slate-500 m-0 mt-0.5 text-xs">Lưu trữ tập trung chẩn đoán, kết quả cận lâm sàng và toa thuốc gia đình</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons Group (Top Right) -->
+            <div class="flex items-center gap-2.5 self-start sm:self-auto shrink-0">
+                <button onclick="document.getElementById('btnExportFullRecord').click()" class="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs shadow-xs transition-all cursor-pointer" type="button" title="Xuất toàn bộ hồ sơ y bạ PDF">
+                    <span class="material-symbols-outlined text-[18px] text-rose-500">picture_as_pdf</span>
+                    <span class="hidden md:inline">Xuất y bạ PDF</span>
+                </button>
+                <button id="btnAddNewEncounter" class="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-[#0284C7] hover:bg-[#0369a1] text-white font-semibold text-xs sm:text-sm shadow-md shadow-sky-600/20 transition-all cursor-pointer border-0 active:scale-95" type="button">
+                    <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                    <span>Thêm đợt khám mới</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Toolbar: 3 Equal Filter Dropdowns + Specialty Chips -->
+        <div class="pt-4 space-y-3.5">
+            <!-- 3 Criteria Grid with consistent heights & labels -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <!-- Dropdown 1: Chọn Thành viên -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[15px] text-[#0284C7]">person</span>
+                        Thành viên gia đình
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <div id="patientAvatarBadge" class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-600 to-cyan-500 text-white flex items-center justify-center font-bold text-[10px] shadow-xs">
+                                K
+                            </div>
+                        </div>
+                        <select id="patientSelector" class="w-full h-10 pl-9 pr-8 bg-slate-50/80 hover:bg-white text-slate-800 font-semibold text-xs rounded-xl border border-slate-200 cursor-pointer focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100 transition-all appearance-none shadow-xs">
+                            <option value="all">Tất cả thành viên trong nhà</option>
+                            <option value="khang" selected>Trần Quốc Khang • Ông nội (68t)</option>
+                            <option value="dat">Trần Viết Đạt • Bố (38t)</option>
+                            <option value="ha">Lê Thu Hà • Mẹ (35t)</option>
+                            <option value="an">Trần Bảo An • Con trai (8t)</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-slate-400">
+                            <span class="material-symbols-outlined text-[18px]">unfold_more</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dropdown 2: Khoảng thời gian khám -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[15px] text-[#0284C7]">calendar_month</span>
+                        Khoảng thời gian khám
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <span class="material-symbols-outlined text-[18px]">event_note</span>
+                        </div>
+                        <select id="timeRangeFilter" class="w-full h-10 pl-9 pr-8 bg-slate-50/80 hover:bg-white text-slate-800 font-semibold text-xs rounded-xl border border-slate-200 cursor-pointer focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100 transition-all appearance-none shadow-xs">
+                            <option value="all" selected>Tất cả thời gian</option>
+                            <option value="30d">30 ngày gần đây</option>
+                            <option value="6m">6 tháng gần đây</option>
+                            <option value="2026">Năm 2026</option>
+                            <option value="2025">Năm 2025</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-slate-400">
+                            <span class="material-symbols-outlined text-[18px]">expand_more</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dropdown 3: Loại hồ sơ khám -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[15px] text-[#0284C7]">medical_services</span>
+                        Loại hồ sơ &amp; Bệnh án
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <span class="material-symbols-outlined text-[18px]">category</span>
+                        </div>
+                        <select id="recordTypeFilter" class="w-full h-10 pl-9 pr-8 bg-slate-50/80 hover:bg-white text-slate-800 font-semibold text-xs rounded-xl border border-slate-200 cursor-pointer focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100 transition-all appearance-none shadow-xs">
+                            <option value="all" selected>Tất cả loại hồ sơ</option>
+                            <option value="routine">Khám định kỳ</option>
+                            <option value="lab">Xét nghiệm &amp; Cận lâm sàng</option>
+                            <option value="emergency">Cấp cứu &amp; Nhập viện</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-slate-400">
+                            <span class="material-symbols-outlined text-[18px]">expand_more</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Specialty Filter Tabs embedded harmoniously at the bottom of the card -->
+            <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
+                <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-0.5">
+                    <span class="text-xs font-bold text-slate-500 whitespace-nowrap mr-1 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[15px] text-[#0284C7]">tune</span>
+                        Chuyên khoa:
+                    </span>
+                    <button onclick="filterSpecialty('all', this)" class="specialty-tab-btn px-3 py-1.5 rounded-lg font-label-md text-xs bg-[#0284C7] text-white shadow-xs font-semibold border-0 cursor-pointer whitespace-nowrap transition-all" type="button">Tất cả</button>
+                    <button onclick="filterSpecialty('routine', this)" class="specialty-tab-btn px-3 py-1.5 rounded-lg font-label-md text-xs bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-0 transition-colors cursor-pointer whitespace-nowrap" type="button">Khám định kỳ</button>
+                    <button onclick="filterSpecialty('cardiology', this)" class="specialty-tab-btn px-3 py-1.5 rounded-lg font-label-md text-xs bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-0 transition-colors cursor-pointer whitespace-nowrap" type="button">Tim mạch &amp; Nội tiết</button>
+                    <button onclick="filterSpecialty('allergy', this)" class="specialty-tab-btn px-3 py-1.5 rounded-lg font-label-md text-xs bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-0 transition-colors cursor-pointer whitespace-nowrap" type="button">Dị ứng &amp; Miễn dịch</button>
+                    <button onclick="filterSpecialty('pediatric', this)" class="specialty-tab-btn px-3 py-1.5 rounded-lg font-label-md text-xs bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-0 transition-colors cursor-pointer whitespace-nowrap" type="button">Nhi khoa &amp; Tiêm chủng</button>
+                </div>
+
+                <button onclick="resetAllFilters()" class="text-xs font-semibold text-slate-500 hover:text-[#0284C7] inline-flex items-center gap-1 transition-colors border-0 bg-transparent cursor-pointer p-0" type="button" title="Đặt lại bộ lọc về mặc định">
+                    <span class="material-symbols-outlined text-[15px]">refresh</span>
+                    <span>Đặt lại bộ lọc</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. MAIN GRID: 65% CLINICAL FEED (TIMELINE) / 35% VITALS & VAULT -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-1">
+        <!-- LEFT COLUMN: Examination Records Timeline -->
+        <div class="lg:col-span-8 flex flex-col">
+            <div class="flex items-center justify-between pb-3 mb-2">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[22px]">timeline</span>
+                    <h2 class="font-title-md text-on-surface m-0">Lịch sử khám &amp; Diễn tiến bệnh án</h2>
+                </div>
+                <span class="font-label-sm text-outline">Sắp xếp: Mới nhất trước</span>
+            </div>
+
+            <!-- Timeline Container with connecting vertical line -->
+            <div class="timeline-track pl-6 space-y-6">
+                <!-- ENCOUNTER CARD 1: Bệnh viện Bạch Mai / Vinmec - Tim mạch & Nội tiết -->
+                <div class="relative encounter-item" data-member="khang" data-type="routine" data-specialty="cardiology">
+                    <!-- Timeline Node Pin -->
+                    <div class="timeline-node bg-primary ring-4 ring-primary-fixed shadow-sm">
+                        <span class="w-1.5 h-1.5 rounded-full bg-surface-container-lowest"></span>
+                    </div>
+
+                    <article class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-slate-200/80 record-card">
+                        <!-- Header Badges: Date, Facility, Department, Code -->
+                        <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-slate-100 mb-3.5">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="px-3 py-1 rounded-full bg-primary text-on-primary font-label-md text-xs font-semibold tracking-wide">
+                                    15/10/2026
+                                </span>
+                                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container-low text-on-surface font-label-md text-xs font-medium">
+                                    <span class="material-symbols-outlined text-tertiary text-[16px]" style="font-variation-settings: 'FILL' 1;">domain_verification</span>
+                                    Bệnh viện Bạch Mai - Viện Tim Mạch Quốc Gia
+                                </span>
+                                <span class="px-2.5 py-1 rounded-md bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-[11px] font-semibold">
+                                    Khoa Tim Mạch &amp; Nội Tiết
+                                </span>
+                            </div>
+                            <span class="font-label-sm text-outline font-mono">#BM-2026-8812</span>
+                        </div>
+
+                        <!-- Doctor In-Charge Details -->
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0 font-bold">
+                                    <span class="material-symbols-outlined text-[20px]">stethoscope</span>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-title-md text-on-surface font-bold text-sm">BS. CKI Nguyễn Văn Tuấn</span>
+                                        <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-surface-container-lowest text-tertiary font-label-sm text-[10px] font-semibold border border-emerald-200">
+                                            <span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                            Chữ ký số hợp lệ
+                                        </span>
+                                    </div>
+                                    <span class="font-body-sm text-on-surface-variant text-xs">Trưởng đơn vị Quản lý Bệnh lý mạn tính người cao tuổi</span>
+                                </div>
+                            </div>
+                            <button onclick="showToast('Xác thực chữ ký số', 'BS. CKI Nguyễn Văn Tuấn • Chứng thư số Ban Cơ yếu Chính phủ')" class="hidden sm:inline-flex items-center gap-1 font-label-sm text-xs text-primary hover:text-primary-container font-medium p-1.5 border-0 bg-transparent cursor-pointer" type="button">
+                                <span class="material-symbols-outlined text-[16px]">history_edu</span>
+                                <span>Xem chữ ký</span>
+                            </button>
+                        </div>
+
+                        <!-- Clinical Findings & ICD-10 Diagnosis -->
+                        <div class="space-y-2.5 mb-4">
+                            <div>
+                                <span class="font-label-sm text-outline uppercase tracking-wider block mb-1">Chẩn đoán xác định &amp; Tình trạng lâm sàng</span>
+                                <p class="font-body-md text-on-surface leading-relaxed text-sm m-0">
+                                    Tái khám định kỳ tăng huyết áp vô căn &amp; Đái tháo đường Type 2 có kiểm soát tốt. Bệnh nhân không xuất hiện cơn đau thắt ngực, không hoa mắt chóng mặt tư thế, tuân thủ nghiêm ngặt phác đồ điều trị và chế độ dinh dưỡng.
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 pt-1">
+                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container-high text-on-surface font-label-md text-xs">
+                                    <span class="w-2 h-2 rounded-full bg-primary"></span>
+                                    <span class="font-semibold text-primary">ICD-10: I10</span>
+                                    <span class="text-on-surface-variant">• Tăng huyết áp vô căn (nguyên phát)</span>
+                                </div>
+                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container-high text-on-surface font-label-md text-xs">
+                                    <span class="w-2 h-2 rounded-full bg-secondary"></span>
+                                    <span class="font-semibold text-secondary">ICD-10: E11.9</span>
+                                    <span class="text-on-surface-variant">• ĐTĐ Type 2 không biến chứng</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Attachments Gallery: DICOM, PDF, ECG -->
+                        <div class="mb-4">
+                            <div class="flex items-center justify-between mb-2.5">
+                                <span class="font-label-sm text-outline uppercase tracking-wider block">Tệp đính kèm cận lâm sàng &amp; Hình ảnh học (3 tệp)</span>
+                                <span class="text-[11px] text-primary font-medium">Bảo mật mã hóa y khoa</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                <!-- DICOM File Card -->
+                                <div class="p-3 rounded-lg bg-surface-container-low attachment-card flex flex-col justify-between">
+                                    <div class="flex items-start gap-2.5 mb-2">
+                                        <span class="material-symbols-outlined text-primary text-[24px]">radiology</span>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="font-title-md text-xs text-on-surface truncate font-semibold m-0" title="X-Quang_Tim_Phoi_Thang.dcm">X-Quang_Tim_Phoi.dcm</p>
+                                            <span class="font-label-sm text-[10px] text-outline">DICOM PACS • 4.2 MB</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between pt-2 border-t border-slate-200/50">
+                                        <button onclick="previewFile('X-Quang_Tim_Phoi.dcm', 'DICOM PACS')" class="font-label-sm text-xs text-primary font-medium hover:underline inline-flex items-center gap-1 border-0 bg-transparent cursor-pointer p-0" type="button">
+                                            <span class="material-symbols-outlined text-[14px]">visibility</span> Xem ảnh
+                                        </button>
+                                        <button onclick="downloadAttachment('X-Quang_Tim_Phoi.dcm')" class="text-on-surface-variant hover:text-primary transition-colors p-1 border-0 bg-transparent cursor-pointer" title="Tải tệp đính kèm" type="button">
+                                            <span class="material-symbols-outlined text-[16px]">download</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- PDF Report File Card -->
+                                <div class="p-3 rounded-lg bg-surface-container-low attachment-card flex flex-col justify-between">
+                                    <div class="flex items-start gap-2.5 mb-2">
+                                        <span class="material-symbols-outlined text-error text-[24px]">picture_as_pdf</span>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="font-title-md text-xs text-on-surface truncate font-semibold m-0" title="Sinh_hoa_mau_18_chi_so.pdf">Sinh_hoa_mau_18_chi_so.pdf</p>
+                                            <span class="font-label-sm text-[10px] text-outline">PDF Report • 1.8 MB</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between pt-2 border-t border-slate-200/50">
+                                        <button onclick="previewFile('Sinh_hoa_mau_18_chi_so.pdf', 'Kết quả xét nghiệm')" class="font-label-sm text-xs text-primary font-medium hover:underline inline-flex items-center gap-1 border-0 bg-transparent cursor-pointer p-0" type="button">
+                                            <span class="material-symbols-outlined text-[14px]">visibility</span> Xem kết quả
+                                        </button>
+                                        <button onclick="downloadAttachment('Sinh_hoa_mau_18_chi_so.pdf')" class="text-on-surface-variant hover:text-primary transition-colors p-1 border-0 bg-transparent cursor-pointer" title="Tải tệp đính kèm" type="button">
+                                            <span class="material-symbols-outlined text-[16px]">download</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- ECG Wave File Card -->
+                                <div class="p-3 rounded-lg bg-surface-container-low attachment-card flex flex-col justify-between">
+                                    <div class="flex items-start gap-2.5 mb-2">
+                                        <span class="material-symbols-outlined text-secondary text-[24px]">ecg_heart</span>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="font-title-md text-xs text-on-surface truncate font-semibold m-0" title="Dien_tam_do_ECG_12_chuyen_dao.png">Dien_tam_do_ECG.png</p>
+                                            <span class="font-label-sm text-[10px] text-outline">Điện tâm đồ • 950 KB</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between pt-2 border-t border-slate-200/50">
+                                        <button onclick="previewFile('Dien_tam_do_ECG.png', 'Điện tâm đồ ECG')" class="font-label-sm text-xs text-primary font-medium hover:underline inline-flex items-center gap-1 border-0 bg-transparent cursor-pointer p-0" type="button">
+                                            <span class="material-symbols-outlined text-[14px]">visibility</span> Chi tiết sóng
+                                        </button>
+                                        <button onclick="downloadAttachment('Dien_tam_do_ECG.png')" class="text-on-surface-variant hover:text-primary transition-colors p-1 border-0 bg-transparent cursor-pointer" title="Tải tệp đính kèm" type="button">
+                                            <span class="material-symbols-outlined text-[16px]">download</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- E-Prescription Snapshot -->
+                        <div class="p-4 rounded-xl bg-surface-container-low border border-slate-200/60">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary text-[20px]">prescriptions</span>
+                                    <span class="font-title-md text-on-surface font-semibold text-xs sm:text-sm">Toa thuốc điện tử điều trị duy trì (30 ngày)</span>
+                                </div>
+                                <span class="font-label-sm text-xs text-tertiary font-semibold inline-flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Đang áp dụng
+                                </span>
+                            </div>
+
+                            <!-- Medicine Pills -->
+                            <div class="flex flex-wrap gap-2 mb-2.5">
+                                <span class="px-3 py-1.5 rounded-lg bg-surface-container-lowest text-on-surface font-body-sm text-xs font-medium shadow-xs flex items-center gap-1.5 border border-slate-200/70">
+                                    <span class="material-symbols-outlined text-primary text-[16px]">medication</span>
+                                    Amlodipine 5mg • <strong class="text-primary">1v/sáng (sau ăn)</strong>
+                                </span>
+                                <span class="px-3 py-1.5 rounded-lg bg-surface-container-lowest text-on-surface font-body-sm text-xs font-medium shadow-xs flex items-center gap-1.5 border border-slate-200/70">
+                                    <span class="material-symbols-outlined text-secondary text-[16px]">medication</span>
+                                    Metformin 850mg • <strong class="text-secondary">2v/ngày (trưa, tối)</strong>
+                                </span>
+                                <span class="px-3 py-1.5 rounded-lg bg-surface-container-lowest text-on-surface font-body-sm text-xs font-medium shadow-xs flex items-center gap-1.5 border border-slate-200/70">
+                                    <span class="material-symbols-outlined text-outline text-[16px]">medication</span>
+                                    Atorvastatin 20mg • <strong class="text-on-surface">1v/tối (trước ngủ)</strong>
+                                </span>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-slate-200/50">
+                                <p class="font-body-sm text-on-surface-variant text-xs italic m-0">
+                                    Dặn dò: Uống nhiều nước, kiểm tra chỉ số huyết áp mỗi sáng trước khi uống thuốc.
+                                </p>
+                                <button onclick="viewPrescriptionDetails('15/10/2026', 'Amlodipine, Metformin, Atorvastatin')" class="px-3 py-1.5 rounded-lg bg-secondary-fixed text-on-secondary-fixed-variant hover:bg-secondary-fixed-dim font-label-md text-xs font-semibold transition-colors shrink-0 border-0 cursor-pointer" type="button">
+                                    Xem chi tiết đơn thuốc
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- ENCOUNTER CARD 2: Bệnh viện Đại học Y Dược / Đại học Y Hà Nội -->
+                <div class="relative encounter-item" data-member="khang" data-type="lab" data-specialty="allergy">
+                    <div class="timeline-node bg-secondary ring-4 ring-secondary-fixed shadow-sm">
+                        <span class="w-1.5 h-1.5 rounded-full bg-surface-container-lowest"></span>
+                    </div>
+
+                    <article class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-slate-200/80 record-card">
+                        <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-slate-100 mb-3">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="px-3 py-1 rounded-full bg-surface-container-high text-on-surface font-label-md text-xs font-semibold">
+                                    28/09/2026
+                                </span>
+                                <span class="font-title-md text-on-surface font-semibold text-xs sm:text-sm">
+                                    Bệnh viện Đại học Y Dược TP.HCM (Khoa Dị Ứng)
+                                </span>
+                                <span class="px-2 py-0.5 rounded-md bg-surface-container-low text-on-surface-variant font-label-sm text-[11px]">
+                                    Khoa Dị Ứng &amp; Miễn Dịch Lâm Sàng
+                                </span>
+                            </div>
+                            <span class="font-label-sm text-outline font-mono">#UMP-2026-4401</span>
+                        </div>
+
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="material-symbols-outlined text-on-surface-variant text-[18px]">person</span>
+                            <span class="font-body-md text-xs text-on-surface-variant">Bác sĩ khám: <strong class="text-on-surface font-semibold">ThS. BS Trần Mai Phương</strong></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="flex flex-wrap items-center gap-2 mb-2">
+                                <span class="px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-xs font-semibold">
+                                    Cảnh báo: Dị ứng Penicillin &amp; NSAIDs (Mức độ vừa)
+                                </span>
+                                <span class="px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-xs">
+                                    Chẩn đoán phụ: Thiếu máu nhẹ thiếu sắt
+                                </span>
+                            </div>
+                            <p class="font-body-md text-on-surface-variant text-xs leading-relaxed m-0">
+                                Bệnh nhân từng nổi mề đay sau khi sử dụng Amoxicillin. Đã thực hiện test lẩy da khẳng định dị ứng nhóm Beta-lactam. Cập nhật thẻ cảnh báo dị ứng thuốc toàn hệ thống.
+                            </p>
+                        </div>
+
+                        <!-- Compact Attachments & Prescriptions -->
+                        <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-low text-on-surface font-label-sm text-xs border border-slate-200/50">
+                                    <span class="material-symbols-outlined text-error text-[15px]">description</span>
+                                    Test_di_ung_thuoc.pdf (1.2 MB)
+                                    <button onclick="downloadAttachment('Test_di_ung_thuoc.pdf')" class="text-slate-400 hover:text-primary ml-1 border-0 bg-transparent cursor-pointer p-0" title="Tải tệp"><span class="material-symbols-outlined text-[14px]">download</span></button>
+                                </span>
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-low text-on-surface font-label-sm text-xs border border-slate-200/50">
+                                    <span class="material-symbols-outlined text-primary text-[15px]">description</span>
+                                    Cong_thuc_mau.pdf (850 KB)
+                                    <button onclick="downloadAttachment('Cong_thuc_mau.pdf')" class="text-slate-400 hover:text-primary ml-1 border-0 bg-transparent cursor-pointer p-0" title="Tải tệp"><span class="material-symbols-outlined text-[14px]">download</span></button>
+                                </span>
+                            </div>
+                            <button onclick="showToast('Chi tiết bệnh án #UMP-2026-4401', 'Đã tải dữ liệu dị ứng và kết quả huyết học')" class="inline-flex items-center gap-1 font-label-md text-xs text-primary hover:text-primary-container font-semibold transition-colors border-0 bg-transparent cursor-pointer" type="button">
+                                <span>Xem chi tiết bệnh án</span>
+                                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                            </button>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- ENCOUNTER CARD 3: Bệnh viện Nhi Đồng 1 / Nhi Trung Ương (Trần Bảo An) -->
+                <div class="relative encounter-item" data-member="an" data-type="routine" data-specialty="pediatric">
+                    <div class="timeline-node bg-tertiary ring-4 ring-tertiary-fixed shadow-sm">
+                        <span class="w-1.5 h-1.5 rounded-full bg-surface-container-lowest"></span>
+                    </div>
+
+                    <article class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-slate-200/80 record-card">
+                        <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-slate-100 mb-3">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="px-3 py-1 rounded-full bg-surface-container-high text-on-surface font-label-md text-xs font-semibold">
+                                    12/08/2026
+                                </span>
+                                <span class="font-title-md text-on-surface font-semibold text-xs sm:text-sm">
+                                    Bệnh viện Nhi Đồng 1 (Khoa Tiêm Chủng)
+                                </span>
+                                <span class="px-2 py-0.5 rounded-md bg-surface-container-low text-on-surface-variant font-label-sm text-[11px]">
+                                    Khám Nhi &amp; Tiêm Chủng Mở Rộng
+                                </span>
+                                <span class="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-[11px] font-semibold">
+                                    Bệnh nhi: Trần Bảo An (8t)
+                                </span>
+                            </div>
+                            <span class="font-label-sm text-outline font-mono">#CH1-2026-1934</span>
+                        </div>
+
+                        <p class="font-body-md text-on-surface-variant text-xs leading-relaxed mb-3 m-0">
+                            Khám sức khỏe tổng quát chuẩn bị năm học mới &amp; Tiêm chủng nhắc lại vắc-xin Cúm mùa thế hệ mới (Vaxigrip Tetra 0.5ml). Thể trạng phát triển tốt, chiều cao và cân nặng đạt chuẩn WHO.
+                        </p>
+
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-tertiary text-[18px]">vaccines</span>
+                                <span class="font-label-md text-xs text-on-surface font-medium">Đã cập nhật vào Sổ tiêm chủng điện tử quốc gia</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="downloadAttachment('Phieu_tiem_chung_Vaxigrip.pdf')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-label-md text-xs font-medium border-0 cursor-pointer inline-flex items-center gap-1" type="button">
+                                    <span class="material-symbols-outlined text-[14px]">download</span> Tải tệp đính kèm
+                                </button>
+                                <button onclick="showToast('Sổ tiêm chủng', 'Phiếu tiêm Vaxigrip Tetra 0.5ml hợp lệ')" class="inline-flex items-center gap-1 font-label-md text-xs text-primary hover:text-primary-container font-semibold transition-colors border-0 bg-transparent cursor-pointer" type="button">
+                                    <span>Xem phiếu tiêm</span>
+                                    <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Clinical Vitals & Medical Vault -->
+        <div class="lg:col-span-4 flex flex-col gap-5">
+            <!-- WIDGET 1: Sinh Hiệu Lần Khám Gần Nhất -->
+            <section class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-slate-200/80">
+                <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[22px]">vital_signs</span>
+                        <h2 class="font-title-md text-on-surface m-0 text-sm sm:text-base font-bold">Sinh Hiệu Lần Khám Gần Nhất</h2>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-[10px] font-bold">Ổn định</span>
+                </div>
+                <p class="font-label-sm text-outline mb-3 m-0">
+                    Bệnh nhân: <strong class="text-slate-800">Trần Quốc Khang</strong> • Ghi nhận 15/10/2026
+                </p>
+
+                <!-- 2x2 Metric Tiles Grid -->
+                <div class="grid grid-cols-2 gap-2.5 mb-3.5">
+                    <!-- Blood Pressure Tile -->
+                    <div class="p-3 rounded-lg bg-surface-container-low flex flex-col justify-between border border-slate-200/50">
+                        <span class="font-label-sm text-[11px] text-on-surface-variant font-medium">Huyết áp (HA)</span>
+                        <div class="my-1">
+                            <span class="font-metric-num text-xl text-on-surface font-bold">125/82</span>
+                            <span class="font-label-sm text-[10px] text-outline ml-0.5">mmHg</span>
+                        </div>
+                        <div class="flex items-center gap-1 text-tertiary font-label-sm text-[10px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                            <span>Kiểm soát tối ưu</span>
+                        </div>
+                    </div>
+
+                    <!-- Heart Rate Tile -->
+                    <div class="p-3 rounded-lg bg-surface-container-low flex flex-col justify-between border border-slate-200/50">
+                        <span class="font-label-sm text-[11px] text-on-surface-variant font-medium">Nhịp tim</span>
+                        <div class="my-1">
+                            <span class="font-metric-num text-xl text-on-surface font-bold">74</span>
+                            <span class="font-label-sm text-[10px] text-outline ml-0.5">bpm</span>
+                        </div>
+                        <div class="flex items-center gap-1 text-tertiary font-label-sm text-[10px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                            <span>Nhịp xoang đều</span>
+                        </div>
+                    </div>
+
+                    <!-- Blood Glucose Tile -->
+                    <div class="p-3 rounded-lg bg-surface-container-low flex flex-col justify-between border border-slate-200/50">
+                        <span class="font-label-sm text-[11px] text-on-surface-variant font-medium">Đường huyết đói</span>
+                        <div class="my-1">
+                            <span class="font-metric-num text-xl text-secondary font-bold">6.2</span>
+                            <span class="font-label-sm text-[10px] text-outline ml-0.5">mmol/L</span>
+                        </div>
+                        <div class="flex items-center gap-1 text-secondary font-label-sm text-[10px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                            <span>HbA1c: 6.4%</span>
+                        </div>
+                    </div>
+
+                    <!-- BMI Tile -->
+                    <div class="p-3 rounded-lg bg-surface-container-low flex flex-col justify-between border border-slate-200/50">
+                        <span class="font-label-sm text-[11px] text-on-surface-variant font-medium">Chỉ số BMI</span>
+                        <div class="my-1">
+                            <span class="font-metric-num text-xl text-on-surface font-bold">22.1</span>
+                            <span class="font-label-sm text-[10px] text-outline ml-0.5">kg/m²</span>
+                        </div>
+                        <div class="flex items-center gap-1 text-tertiary font-label-sm text-[10px] font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                            <span>65.5 kg • Bình thường</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Doctor's Note Callout -->
+                <div class="p-3 rounded-lg bg-surface-container-high flex items-start gap-2.5">
+                    <span class="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">clinical_notes</span>
+                    <p class="font-body-sm text-xs text-on-surface leading-snug m-0">
+                        <strong>Lời dặn bác sĩ:</strong> Tiếp tục chế độ ăn giảm muối &lt; 5g/ngày, tập thể dục nhẹ nhàng 30 phút mỗi ngày. Tái khám ngay khi huyết áp tâm thu vượt 140 mmHg.
+                    </p>
+                </div>
+            </section>
+
+            <!-- WIDGET 2: Kho Dữ Liệu Y Khoa (Medical Vault) -->
+            <section class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-slate-200/80">
+                <div class="flex items-center justify-between pb-3 mb-2.5 border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[22px]">lock</span>
+                        <h2 class="font-title-md text-on-surface m-0 text-sm sm:text-base font-bold">Kho Dữ Liệu Y Khoa (Vault)</h2>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-[10px] font-semibold">
+                        Mã hóa AES-256
+                    </span>
+                </div>
+                <p class="font-body-sm text-xs text-on-surface-variant mb-3.5 m-0">
+                    Lưu trữ tập trung kết quả chẩn đoán hình ảnh DICOM, phiếu xét nghiệm và lịch sử điều trị theo chuẩn y tế quốc tế.
+                </p>
+
+                <!-- Category Counts Rows -->
+                <div class="space-y-2 mb-4">
+                    <div onclick="showToast('Xét nghiệm máu', 'Hiển thị 6 kết quả sinh hóa gần nhất')" class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low vault-category-row cursor-pointer border border-slate-200/50">
+                        <div class="flex items-center gap-2.5">
+                            <span class="material-symbols-outlined text-error text-[18px]">bloodtype</span>
+                            <span class="font-label-md text-xs text-on-surface font-medium">Xét nghiệm máu &amp; Sinh hóa</span>
+                        </div>
+                        <span class="font-label-sm text-xs text-on-surface-variant font-bold">6 tệp PDF</span>
+                    </div>
+
+                    <div onclick="showToast('Chẩn đoán hình ảnh', 'Hiển thị 4 tệp phim DICOM/X-Ray')" class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low vault-category-row cursor-pointer border border-slate-200/50">
+                        <div class="flex items-center gap-2.5">
+                            <span class="material-symbols-outlined text-primary text-[18px]">radiology</span>
+                            <span class="font-label-md text-xs text-on-surface font-medium">Chẩn đoán hình ảnh CT / X-Ray</span>
+                        </div>
+                        <span class="font-label-sm text-xs text-on-surface-variant font-bold">4 tệp PACS</span>
+                    </div>
+
+                    <div onclick="showToast('Toa thuốc điện tử', 'Hiển thị 8 đơn thuốc số liên thông viện')" class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low vault-category-row cursor-pointer border border-slate-200/50">
+                        <div class="flex items-center gap-2.5">
+                            <span class="material-symbols-outlined text-secondary text-[18px]">receipt_long</span>
+                            <span class="font-label-md text-xs text-on-surface font-medium">Toa thuốc điện tử đã cấp</span>
+                        </div>
+                        <span class="font-label-sm text-xs text-on-surface-variant font-bold">8 toa thuốc</span>
+                    </div>
+                </div>
+
+                <!-- Export Action Button -->
+                <button id="btnExportFullRecord" class="w-full h-10 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-md text-xs font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95 shadow-xs border-0 cursor-pointer" type="button">
+                    <span class="material-symbols-outlined text-[18px]">download_for_offline</span>
+                    <span>Xuất toàn bộ hồ sơ y bạ PDF</span>
+                </button>
+            </section>
+
+            <!-- WIDGET 3: Lịch Hẹn Tái Khám Tới -->
+            <section class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-slate-200/80">
+                <div class="flex items-center justify-between pb-3 mb-2.5 border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[22px]">event_upcoming</span>
+                        <h2 class="font-title-md text-on-surface m-0 text-sm sm:text-base font-bold">Lịch Hẹn Tái Khám Tới</h2>
+                    </div>
+                    <span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-[10px] font-bold">
+                        Còn 92 ngày
+                    </span>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-surface-container-low space-y-2.5 mb-3.5 border border-slate-200/50">
+                    <div class="flex items-start gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-primary-fixed flex items-center justify-center text-primary shrink-0 mt-0.5 font-bold">
+                            <span class="material-symbols-outlined text-[18px]">alarm</span>
+                        </div>
+                        <div>
+                            <p class="font-title-md text-xs sm:text-sm text-on-surface font-bold m-0">Tái khám Tim mạch &amp; ĐTĐ</p>
+                            <p class="font-body-sm text-[11px] text-on-surface-variant m-0">Kiểm tra định kỳ 3 tháng &amp; xét nghiệm HbA1c</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5 pt-2 border-t border-slate-200/50">
+                        <div class="flex items-center gap-2 text-on-surface font-body-sm text-xs">
+                            <span class="material-symbols-outlined text-outline text-[16px]">schedule</span>
+                            <span><strong>15/01/2027</strong> • 08:30 Sáng (Thứ Sáu)</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-on-surface font-body-sm text-xs">
+                            <span class="material-symbols-outlined text-outline text-[16px]">location_on</span>
+                            <span class="truncate">BV Bạch Mai / BV ĐKQT Vinmec • Tầng 3</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="showToast('Nhắc nhở thông minh', 'Đã kích hoạt gửi tin nhắn SMS & thông báo đẩy trước 3 ngày')" class="w-full h-10 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-md text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 border-0 cursor-pointer" type="button">
+                    <span class="material-symbols-outlined text-[18px]">notifications_active</span>
+                    <span>Bật nhắc nhở thông minh</span>
+                </button>
+            </section>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Xem chi tiết đơn thuốc điện tử -->
+<div id="prescriptionModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 transform scale-95 transition-transform duration-200" id="prescriptionModalCard">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-sky-100 text-primary flex items-center justify-center font-bold">
+                    <span class="material-symbols-outlined text-[20px]">prescriptions</span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900 m-0">Toa Thuốc Điện Tử Chi Tiết</h3>
+                    <p id="modalPrescriptionDate" class="text-[11px] text-slate-500 m-0">Đợt khám: 15/10/2026</p>
+                </div>
+            </div>
+            <button onclick="closePrescriptionModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg border-0 bg-transparent cursor-pointer">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+
+        <div class="space-y-3 mb-5">
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-bold text-slate-900 m-0">1. Amlodipine 5mg (Pfizer)</h4>
+                    <span class="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">30 viên</span>
+                </div>
+                <p class="text-[11px] text-slate-600 mt-1 m-0">Liều dùng: Uống 1 viên vào buổi sáng sau ăn. Kiểm soát huyết áp.</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-bold text-slate-900 m-0">2. Metformin 850mg (Glucophage)</h4>
+                    <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">60 viên</span>
+                </div>
+                <p class="text-[11px] text-slate-600 mt-1 m-0">Liều dùng: Uống 2 viên/ngày (1 viên sau ăn trưa, 1 viên sau ăn tối).</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-bold text-slate-900 m-0">3. Atorvastatin 20mg (Lipitor)</h4>
+                    <span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">30 viên</span>
+                </div>
+                <p class="text-[11px] text-slate-600 mt-1 m-0">Liều dùng: Uống 1 viên vào buổi tối trước khi đi ngủ. Điều hòa lipid máu.</p>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <button onclick="downloadAttachment('Toa_thuoc_dien_tu_15102026.pdf')" class="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 cursor-pointer inline-flex items-center gap-1.5" type="button">
+                <span class="material-symbols-outlined text-[16px]">download</span> Tải bản PDF
+            </button>
+            <button onclick="closePrescriptionModal()" class="px-4 py-2 rounded-xl bg-primary hover:bg-[#0369a1] text-xs font-bold text-white cursor-pointer border-0" type="button">
+                Đóng
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Notification Toast -->
+<div id="medicalRecordsToast" class="fixed bottom-6 right-6 z-50 transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300 max-w-sm">
+    <div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700 flex items-center gap-3">
+        <div id="mrToastIconWrapper" class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-[18px]">check_circle</span>
+        </div>
+        <div>
+            <p id="mrToastTitle" class="text-xs font-bold text-white m-0">Thành công</p>
+            <p id="mrToastMessage" class="text-[11px] text-slate-300 mt-0.5 m-0">Hồ sơ đã được cập nhật.</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var toastTimer = null;
+        function showToast(title, message, isSuccess = true) {
+            var toast = document.getElementById('medicalRecordsToast');
+            var titleEl = document.getElementById('mrToastTitle');
+            var msgEl = document.getElementById('mrToastMessage');
+            var iconWrap = document.getElementById('mrToastIconWrapper');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            if (isSuccess) {
+                iconWrap.className = "w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0";
+                iconWrap.innerHTML = '<span class="material-symbols-outlined text-[18px]">check_circle</span>';
+            } else {
+                iconWrap.className = "w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center flex-shrink-0";
+                iconWrap.innerHTML = '<span class="material-symbols-outlined text-[18px]">info</span>';
+            }
+
+            toast.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(function () {
+                toast.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3500);
+        }
+
+        // Tải tệp đính kèm
+        function downloadAttachment(fileName) {
+            showToast("Đang tải tệp cận lâm sàng", "Đang khởi tạo tải xuống: " + fileName, true);
+        }
+
+        // Xem ảnh / tệp
+        function previewFile(fileName, type) {
+            showToast("Xem tệp cận lâm sàng", "Đang mở trình xem bảo mật: " + fileName + " (" + type + ")", false);
+        }
+
+        // Xem chi tiết đơn thuốc
+        function viewPrescriptionDetails(date, medicines) {
+            document.getElementById('modalPrescriptionDate').textContent = "Đợt khám: " + date;
+            var modal = document.getElementById('prescriptionModal');
+            var card = document.getElementById('prescriptionModalCard');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100');
+            card.classList.remove('scale-95');
+            card.classList.add('scale-100');
+        }
+
+        function closePrescriptionModal() {
+            var modal = document.getElementById('prescriptionModal');
+            var card = document.getElementById('prescriptionModalCard');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.classList.remove('opacity-100');
+            card.classList.add('scale-95');
+            card.classList.remove('scale-100');
+        }
+
+        // Cấu hình Avatar cho thành viên
+        var avatarMap = {
+            'all': '<span class="material-symbols-outlined text-[13px] leading-none">groups</span>',
+            'khang': 'K',
+            'dat': 'Đ',
+            'ha': 'H',
+            'an': 'A'
+        };
+
+        var currentSpecialty = 'all';
+
+        // Bộ lọc kết hợp đa tiêu chí (Thành viên + Thời gian + Loại hồ sơ + Chuyên khoa)
+        function applyCombinedFilters() {
+            var selectedMember = document.getElementById('patientSelector').value;
+            var selectedType = document.getElementById('recordTypeFilter').value;
+            var count = 0;
+
+            document.querySelectorAll('.encounter-item').forEach(function (item) {
+                var itemMember = item.getAttribute('data-member');
+                var itemType = item.getAttribute('data-type');
+                var itemSpecialty = item.getAttribute('data-specialty');
+
+                var matchMember = (selectedMember === 'all' || itemMember === selectedMember);
+                var matchType = (selectedType === 'all' || itemType === selectedType);
+                var matchSpecialty = (currentSpecialty === 'all' || itemSpecialty === currentSpecialty || itemType === currentSpecialty);
+
+                if (matchMember && matchType && matchSpecialty) {
+                    item.style.display = '';
+                    count++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            document.getElementById('encounterCountBadge').textContent = count + " đợt khám";
+        }
+
+        // Sự kiện khi đổi Thành viên
+        document.getElementById('patientSelector').addEventListener('change', function () {
+            var selectedMember = this.value;
+            var badge = document.getElementById('patientAvatarBadge');
+            if (badge) {
+                badge.innerHTML = avatarMap[selectedMember] || 'K';
+            }
+            applyCombinedFilters();
+            showToast("Đã lọc bệnh án", "Hiển thị đợt khám của thành viên đã chọn", false);
+        });
+
+        // Sự kiện khi đổi Loại hồ sơ
+        document.getElementById('recordTypeFilter').addEventListener('change', function () {
+            applyCombinedFilters();
+            showToast("Đã lọc loại bệnh án", "Đang cập nhật danh sách hồ sơ theo phân loại", false);
+        });
+
+        // Sự kiện khi đổi Khoảng thời gian
+        document.getElementById('timeRangeFilter').addEventListener('change', function () {
+            showToast("Đã lọc thời gian", "Đang tải dữ liệu hồ sơ theo mốc thời gian đã chọn", false);
+        });
+
+        // Sự kiện Tab lọc Chuyên khoa
+        function filterSpecialty(specialtyKey, btn) {
+            currentSpecialty = specialtyKey;
+            document.querySelectorAll('.specialty-tab-btn').forEach(function (b) {
+                b.className = "specialty-tab-btn px-3 py-1.5 rounded-lg font-label-md text-xs bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-0 transition-colors cursor-pointer whitespace-nowrap";
+            });
+            btn.className = "specialty-tab-btn px-3 py-1.5 rounded-lg font-label-md text-xs bg-[#0284C7] text-white shadow-xs font-semibold border-0 cursor-pointer whitespace-nowrap transition-all";
+
+            applyCombinedFilters();
+        }
+
+        // Đặt lại toàn bộ bộ lọc
+        function resetAllFilters() {
+            document.getElementById('patientSelector').value = 'all';
+            var badge = document.getElementById('patientAvatarBadge');
+            if (badge) {
+                badge.innerHTML = avatarMap['all'];
+            }
+            document.getElementById('timeRangeFilter').value = 'all';
+            document.getElementById('recordTypeFilter').value = 'all';
+
+            var firstTab = document.querySelector('.specialty-tab-btn');
+            if (firstTab) {
+                filterSpecialty('all', firstTab);
+            } else {
+                currentSpecialty = 'all';
+                applyCombinedFilters();
+            }
+            showToast("Đã đặt lại bộ lọc", "Hiển thị tất cả hồ sơ bệnh án gia đình", false);
+        }
+
+        // Nút thêm đợt khám mới
+        document.getElementById('btnAddNewEncounter').addEventListener('click', function () {
+            showToast("Thêm đợt khám", "Đang mở biểu mẫu nhập đợt khám bệnh mới...", false);
+        });
+
+        // Xuất toàn bộ hồ sơ y bạ PDF
+        document.getElementById('btnExportFullRecord').addEventListener('click', function () {
+            showToast("Xuất hồ sơ y bạ", "Toàn bộ dữ liệu bệnh án điện tử đang được đóng gói định dạng PDF...");
+        });
+    </script>
+}
