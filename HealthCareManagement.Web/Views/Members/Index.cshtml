@@ -1,0 +1,809 @@
+@{
+    ViewData["Title"] = "Quản Lý Thành Viên & Chỉ Số Sinh Hiệu";
+}
+
+@section Styles {
+    <!-- Google Fonts: Material Symbols Outlined -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+    <!-- Tailwind CSS CDN for Google Stitch utility classes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: {
+                preflight: false,
+                visibility: false,
+            },
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0284C7',
+                        brand: {
+                            ocean: '#0284C7',
+                            cyan: '#06B6D4',
+                            mint: '#10B981',
+                            amber: '#F59E0B',
+                            danger: '#EF4444',
+                        },
+                        slateBg: '#F8FAFC',
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        card: '0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03)',
+                        cardHover: '0 10px 25px -4px rgba(2, 132, 199, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.04)',
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="stylesheet" href="~/css/modules/members.css" asp-append-version="true" />
+}
+
+<div class="flex flex-col w-full gap-6">
+    <!-- 1. BREADCRUMB & SYNC STATUS BAR -->
+    <section class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-1 border-b border-slate-200/80">
+        <nav aria-label="breadcrumb" class="flex items-center gap-1.5 font-label-md text-slate-500 overflow-x-auto whitespace-nowrap py-1">
+            <a asp-controller="Home" asp-action="Index" class="hover:text-primary transition-colors cursor-pointer flex items-center gap-1 text-slate-500 text-decoration-none">
+                <span class="material-symbols-outlined text-[16px]">home</span>
+                Trang chủ
+            </a>
+            <span class="text-slate-300">/</span>
+            <a asp-controller="FamilyGroups" asp-action="Index" class="hover:text-primary transition-colors cursor-pointer text-slate-500 text-decoration-none">
+                Quản lý tổ ấm
+            </a>
+            <span class="text-slate-300">/</span>
+            <span class="text-primary font-semibold">Danh sách thành viên &amp; Chỉ số</span>
+        </nav>
+
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 font-label-sm border border-emerald-200/80 shadow-xs flex-shrink-0 self-start sm:self-auto">
+            <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span class="text-xs font-semibold">Đồng bộ thẻ BHYT quốc gia</span>
+            <span class="text-[10px] bg-emerald-200/70 text-emerald-900 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Cập nhật 09:30</span>
+        </div>
+    </section>
+
+    <!-- 2. PAGE TITLE & DUAL ACTIONS BAR -->
+    <section class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-slate-200/80">
+        <div class="max-w-2xl">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="material-symbols-outlined text-primary text-[22px]">diversity_1</span>
+                <span class="font-label-sm text-primary uppercase font-bold tracking-wider">Hồ sơ gia đình 4 thế hệ</span>
+            </div>
+            <h1 class="font-headline-lg text-slate-900 tracking-tight m-0">QUẢN LÝ THÀNH VIÊN GIA ĐÌNH</h1>
+            <p class="font-body-md text-slate-500 mt-1 mb-0">
+                Theo dõi sát sao sức khỏe đa thế hệ, cảnh báo rủi ro tức thì và đồng bộ chỉ số sinh hiệu liên tục.
+            </p>
+        </div>
+        <div class="flex items-center gap-2.5 flex-shrink-0 flex-wrap">
+            <!-- Nút Xuất báo cáo PDF -->
+            <button id="btnExportPdf" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold shadow-sm transition-all cursor-pointer">
+                <span class="material-symbols-outlined text-[20px] text-rose-500">picture_as_pdf</span>
+                <span class="text-xs sm:text-sm">Xuất báo cáo PDF</span>
+            </button>
+
+            <!-- Nút Thêm thành viên mới -->
+            <a asp-controller="Members" asp-action="Create" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369a1] text-white font-semibold shadow-md shadow-sky-600/20 transition-all cursor-pointer text-decoration-none">
+                <span class="material-symbols-outlined text-[20px] text-white">person_add</span>
+                <span class="text-white text-xs sm:text-sm">Thêm thành viên mới</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- 3. MEMBER PROFILE CARDS (2x2 Grid) -->
+    <section>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Member 1: Ông nội - Trần Quốc Khang -->
+            <article class="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-cardHover transition-all duration-200 p-4 flex flex-col justify-between relative overflow-hidden group member-card">
+                <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-amber-500/5 rounded-full blur-xl pointer-events-none"></div>
+                <div>
+                    <!-- Card Top: Avatar & Info -->
+                    <div class="flex items-center justify-between gap-2 mb-2.5">
+                        <div class="flex items-center gap-2.5">
+                            <div class="relative w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-500/20 to-amber-100 flex items-center justify-center text-amber-800 text-sm font-bold shadow-inner flex-shrink-0">
+                                QK
+                                <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-amber-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white font-bold" title="Cần lưu ý sức khỏe">!</span>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5 leading-tight">
+                                    <h2 class="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors m-0">Trần Quốc Khang</h2>
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-amber-800 bg-amber-100/80 border border-amber-200 text-[10px] font-semibold leading-normal">Ông nội</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
+                                    <span class="font-medium text-slate-700">68 tuổi</span>
+                                    <span class="text-slate-300">•</span>
+                                    <span>Nhóm máu: <strong class="text-slate-800 font-semibold">O+</strong></span>
+                                    <span class="text-slate-300">•</span>
+                                    <span class="font-mono text-slate-500 bg-slate-100 px-1 py-0.2 rounded text-[10px]">HT379012***</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors border-0 bg-transparent" title="Tùy chọn" type="button">
+                            <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                        </button>
+                    </div>
+
+                    <!-- Bệnh nền / Dị ứng Badges -->
+                    <div class="flex flex-wrap gap-1.5 mb-3">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-medium">
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Cao huyết áp độ 2
+                        </span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-medium">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Tiểu đường Type 2
+                        </span>
+                    </div>
+
+                    <!-- Vitals Box -->
+                    <div class="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-slate-50/80 border border-slate-100/90 mb-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-1 text-[10px] text-slate-400 font-medium uppercase">
+                                    <span class="material-symbols-outlined text-[13px] text-primary">monitor_heart</span>
+                                    <span>Huyết áp</span>
+                                </div>
+                                <div class="flex items-baseline gap-1 mt-0.5">
+                                    <span class="font-metric-num text-slate-900 text-[16px] font-bold">138/85</span>
+                                    <span class="text-[10px] text-slate-400">mmHg</span>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-0.5 text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Hơi cao
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between border-l border-slate-200/60 pl-2.5">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-1 text-[10px] text-slate-400 font-medium uppercase">
+                                    <span class="material-symbols-outlined text-[13px] text-amber-600">water_drop</span>
+                                    <span>Đường huyết</span>
+                                </div>
+                                <div class="flex items-baseline gap-1 mt-0.5">
+                                    <span class="font-metric-num text-slate-900 text-[16px] font-bold">6.8</span>
+                                    <span class="text-[10px] text-slate-400">mmol/L</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-200/60">Sau ăn 2h</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Bottom Actions -->
+                <div class="pt-2.5 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <a asp-controller="Members" asp-action="Details" asp-route-id="1" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium transition-colors text-decoration-none">Xem hồ sơ</a>
+                    <button onclick="quickFillMember('khang', 'Trần Quốc Khang')" class="px-2.5 py-1 rounded-md bg-sky-50 text-primary border border-sky-200 hover:bg-sky-100 text-xs font-semibold transition-all inline-flex items-center gap-1 cursor-pointer" type="button">
+                        <span class="material-symbols-outlined text-[14px]">edit_note</span>
+                        <span>Nhập chỉ số</span>
+                    </button>
+                </div>
+            </article>
+
+            <!-- Member 2: Bố (Chủ hộ) - Trần Viết Đạt -->
+            <article class="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-cardHover transition-all duration-200 p-4 flex flex-col justify-between relative overflow-hidden group member-card">
+                <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-sky-500/5 rounded-full blur-xl pointer-events-none"></div>
+                <div>
+                    <!-- Card Top: Avatar & Info -->
+                    <div class="flex items-center justify-between gap-2 mb-2.5">
+                        <div class="flex items-center gap-2.5">
+                            <div class="relative w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-600 to-cyan-500 flex items-center justify-center text-white text-sm font-bold shadow-inner flex-shrink-0">
+                                VĐ
+                                <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white font-bold" title="Sức khỏe ổn định">✓</span>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5 leading-tight">
+                                    <h2 class="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors m-0">Trần Viết Đạt</h2>
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-sky-800 bg-sky-100 border border-sky-200 text-[10px] font-semibold leading-normal">Bố (Chủ hộ)</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
+                                    <span class="font-medium text-slate-700">38 tuổi</span>
+                                    <span class="text-slate-300">•</span>
+                                    <span>Nhóm máu: <strong class="text-slate-800 font-semibold">O+</strong></span>
+                                    <span class="text-slate-300">•</span>
+                                    <span class="font-mono text-slate-500 bg-slate-100 px-1 py-0.2 rounded text-[10px]">GD479234***</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors border-0 bg-transparent" title="Tùy chọn" type="button">
+                            <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                        </button>
+                    </div>
+
+                    <!-- Bệnh nền / Dị ứng Badges -->
+                    <div class="flex flex-wrap gap-1.5 mb-3">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-medium">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Sức khỏe ổn định
+                        </span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-medium">
+                            Không dị ứng
+                        </span>
+                    </div>
+
+                    <!-- Vitals Box -->
+                    <div class="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-slate-50/80 border border-slate-100/90 mb-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-1 text-[10px] text-slate-400 font-medium uppercase">
+                                    <span class="material-symbols-outlined text-[13px] text-primary">monitor_heart</span>
+                                    <span>Huyết áp</span>
+                                </div>
+                                <div class="flex items-baseline gap-1 mt-0.5">
+                                    <span class="font-metric-num text-slate-900 text-[16px] font-bold">118/78</span>
+                                    <span class="text-[10px] text-slate-400">mmHg</span>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Tối ưu
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between border-l border-slate-200/60 pl-2.5">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-1 text-[10px] text-slate-400 font-medium uppercase">
+                                    <span class="material-symbols-outlined text-[13px] text-amber-600">water_drop</span>
+                                    <span>Đường huyết</span>
+                                </div>
+                                <div class="flex items-baseline gap-1 mt-0.5">
+                                    <span class="font-metric-num text-slate-900 text-[16px] font-bold">5.4</span>
+                                    <span class="text-[10px] text-slate-400">mmol/L</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-200/60">Lúc đói</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Bottom Actions -->
+                <div class="pt-2.5 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <a asp-controller="Members" asp-action="Details" asp-route-id="2" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium transition-colors text-decoration-none">Xem hồ sơ</a>
+                    <button onclick="quickFillMember('dat', 'Trần Viết Đạt')" class="px-2.5 py-1 rounded-md bg-sky-50 text-primary border border-sky-200 hover:bg-sky-100 text-xs font-semibold transition-all inline-flex items-center gap-1 cursor-pointer" type="button">
+                        <span class="material-symbols-outlined text-[14px]">edit_note</span>
+                        <span>Nhập chỉ số</span>
+                    </button>
+                </div>
+            </article>
+
+            <!-- Member 3: Mẹ - Lê Thu Hà -->
+            <article class="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-cardHover transition-all duration-200 p-4 flex flex-col justify-between relative overflow-hidden group member-card">
+                <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-rose-500/5 rounded-full blur-xl pointer-events-none"></div>
+                <div>
+                    <!-- Card Top: Avatar & Info -->
+                    <div class="flex items-center justify-between gap-2 mb-2.5">
+                        <div class="flex items-center gap-2.5">
+                            <div class="relative w-11 h-11 rounded-xl bg-gradient-to-tr from-pink-500/20 to-rose-100 flex items-center justify-center text-rose-800 text-sm font-bold shadow-inner flex-shrink-0">
+                                TH
+                                <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white font-bold" title="Sức khỏe ổn định">✓</span>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5 leading-tight">
+                                    <h2 class="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors m-0">Lê Thu Hà</h2>
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-rose-800 bg-rose-100 border border-rose-200 text-[10px] font-semibold leading-normal">Mẹ</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
+                                    <span class="font-medium text-slate-700">35 tuổi</span>
+                                    <span class="text-slate-300">•</span>
+                                    <span>Nhóm máu: <strong class="text-slate-800 font-semibold">A+</strong></span>
+                                    <span class="text-slate-300">•</span>
+                                    <span class="font-mono text-slate-500 bg-slate-100 px-1 py-0.2 rounded text-[10px]">DN482910***</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors border-0 bg-transparent" title="Tùy chọn" type="button">
+                            <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                        </button>
+                    </div>
+
+                    <!-- Bệnh nền / Dị ứng Badges -->
+                    <div class="flex flex-wrap gap-1.5 mb-3">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-medium">
+                            <span class="material-symbols-outlined text-[12px]">warning</span>Dị ứng Penicillin
+                        </span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-medium">
+                            Thiếu máu nhẹ
+                        </span>
+                    </div>
+
+                    <!-- Vitals Box -->
+                    <div class="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-slate-50/80 border border-slate-100/90 mb-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-1 text-[10px] text-slate-400 font-medium uppercase">
+                                    <span class="material-symbols-outlined text-[13px] text-primary">monitor_heart</span>
+                                    <span>Huyết áp</span>
+                                </div>
+                                <div class="flex items-baseline gap-1 mt-0.5">
+                                    <span class="font-metric-num text-slate-900 text-[16px] font-bold">110/72</span>
+                                    <span class="text-[10px] text-slate-400">mmHg</span>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Ổn định
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between border-l border-slate-200/60 pl-2.5">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-1 text-[10px] text-slate-400 font-medium uppercase">
+                                    <span class="material-symbols-outlined text-[13px] text-amber-600">water_drop</span>
+                                    <span>Đường huyết</span>
+                                </div>
+                                <div class="flex items-baseline gap-1 mt-0.5">
+                                    <span class="font-metric-num text-slate-900 text-[16px] font-bold">5.1</span>
+                                    <span class="text-[10px] text-slate-400">mmol/L</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-200/60">Sau ăn nhẹ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Bottom Actions -->
+                <div class="pt-2.5 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <a asp-controller="Members" asp-action="Details" asp-route-id="3" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium transition-colors text-decoration-none">Xem hồ sơ</a>
+                    <button onclick="quickFillMember('ha', 'Lê Thu Hà')" class="px-2.5 py-1 rounded-md bg-sky-50 text-primary border border-sky-200 hover:bg-sky-100 text-xs font-semibold transition-all inline-flex items-center gap-1 cursor-pointer" type="button">
+                        <span class="material-symbols-outlined text-[14px]">edit_note</span>
+                        <span>Nhập chỉ số</span>
+                    </button>
+                </div>
+            </article>
+
+            <!-- Member 4: Con trai - Trần Bảo An -->
+            <article class="bg-white rounded-xl border border-slate-200/90 shadow-sm hover:shadow-cardHover transition-all duration-200 p-4 flex flex-col justify-between relative overflow-hidden group member-card">
+                <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl pointer-events-none"></div>
+                <div>
+                    <!-- Card Top: Avatar & Info -->
+                    <div class="flex items-center justify-between gap-2 mb-2.5">
+                        <div class="flex items-center gap-2.5">
+                            <div class="relative w-11 h-11 rounded-xl bg-gradient-to-tr from-emerald-500/20 to-teal-100 flex items-center justify-center text-emerald-800 text-sm font-bold shadow-inner flex-shrink-0">
+                                BA
+                                <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white font-bold" title="Sức khỏe tốt">✓</span>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5 leading-tight">
+                                    <h2 class="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors m-0">Trần Bảo An</h2>
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-emerald-800 bg-emerald-100 border border-emerald-200 text-[10px] font-semibold leading-normal">Con trai</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
+                                    <span class="font-medium text-slate-700">8 tuổi</span>
+                                    <span class="text-slate-300">•</span>
+                                    <span>Nhóm máu: <strong class="text-slate-800 font-semibold">O+</strong></span>
+                                    <span class="text-slate-300">•</span>
+                                    <span class="font-mono text-slate-500 bg-slate-100 px-1 py-0.2 rounded text-[10px]">TE9981-HCM</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors border-0 bg-transparent" title="Tùy chọn" type="button">
+                            <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                        </button>
+                    </div>
+
+                    <!-- Bệnh nền / Dị ứng Badges -->
+                    <div class="flex flex-wrap gap-1.5 mb-3">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-medium">
+                            <span class="material-symbols-outlined text-[12px]">medication</span>Dị ứng Paracetamol
+                        </span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-medium">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Đủ tiêm chủng
+                        </span>
+                    </div>
+
+                    <!-- Vitals Box -->
+                    <div class="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-slate-50/80 border border-slate-100/90 mb-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-1 text-[10px] text-slate-400 font-medium uppercase">
+                                    <span class="material-symbols-outlined text-[13px] text-primary">monitor_heart</span>
+                                    <span>Huyết áp</span>
+                                </div>
+                                <div class="flex items-baseline gap-1 mt-0.5">
+                                    <span class="font-metric-num text-slate-900 text-[16px] font-bold">102/65</span>
+                                    <span class="text-[10px] text-slate-400">mmHg</span>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Tốt (Trẻ)
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between border-l border-slate-200/60 pl-2.5">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-1 text-[10px] text-slate-400 font-medium uppercase">
+                                    <span class="material-symbols-outlined text-[13px] text-cyan-600">accessibility_new</span>
+                                    <span>BMI (128cm)</span>
+                                </div>
+                                <div class="flex items-baseline gap-1 mt-0.5">
+                                    <span class="font-metric-num text-slate-900 text-[16px] font-bold">16.2</span>
+                                    <span class="text-[10px] text-slate-400">kg/m²</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60">Chuẩn</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Bottom Actions -->
+                <div class="pt-2.5 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <a asp-controller="Members" asp-action="Details" asp-route-id="4" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium transition-colors text-decoration-none">Xem hồ sơ</a>
+                    <button onclick="quickFillMember('an', 'Trần Bảo An')" class="px-2.5 py-1 rounded-md bg-sky-50 text-primary border border-sky-200 hover:bg-sky-100 text-xs font-semibold transition-all inline-flex items-center gap-1 cursor-pointer" type="button">
+                        <span class="material-symbols-outlined text-[14px]">edit_note</span>
+                        <span>Nhập chỉ số</span>
+                    </button>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <!-- 4. SECTION 2: 7-DAY VITALS TREND & QUICK LOG FORM -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <!-- LEFT: 7-DAY VITALS TREND CHART -->
+        <div class="lg:col-span-7 bg-white rounded-xl border border-slate-200/90 shadow-card p-5 flex flex-col justify-between">
+            <div>
+                <!-- Chart Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-primary text-[20px]">ssid_chart</span>
+                            <h3 class="text-sm font-bold text-slate-900 uppercase tracking-tight m-0">Xu Hướng Sinh Hiệu 7 Ngày Qua</h3>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5 mb-0">Đồ thị diễn tiến huyết áp theo dõi liên tục đa thành viên</p>
+                    </div>
+                    <div id="vitalsAvgBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200/70 rounded-lg text-amber-800 text-xs font-medium self-start sm:self-auto">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                        <span>TB: <strong class="font-bold text-slate-900">134/84</strong> mmHg</span>
+                    </div>
+                </div>
+
+                <!-- Member Filter Segmented Tabs -->
+                <div class="flex items-center gap-1 p-1 bg-slate-100/90 rounded-lg overflow-x-auto custom-scrollbar mb-3.5">
+                    <button onclick="filterChartMember('all', this)" class="chart-tab-btn px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 hover:text-slate-900 transition-colors whitespace-nowrap border-0 bg-transparent cursor-pointer" type="button">Tất cả</button>
+                    <button onclick="filterChartMember('khang', this)" class="chart-tab-btn px-2.5 py-1 rounded-md bg-white text-primary text-[11px] font-bold shadow-xs whitespace-nowrap border-0 cursor-pointer" type="button">Trần Quốc Khang</button>
+                    <button onclick="filterChartMember('dat', this)" class="chart-tab-btn px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 hover:text-slate-900 transition-colors whitespace-nowrap border-0 bg-transparent cursor-pointer" type="button">Trần Viết Đạt</button>
+                    <button onclick="filterChartMember('ha', this)" class="chart-tab-btn px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 hover:text-slate-900 transition-colors whitespace-nowrap border-0 bg-transparent cursor-pointer" type="button">Lê Thu Hà</button>
+                    <button onclick="filterChartMember('an', this)" class="chart-tab-btn px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 hover:text-slate-900 transition-colors whitespace-nowrap border-0 bg-transparent cursor-pointer" type="button">Trần Bảo An</button>
+                </div>
+
+                <!-- SVG Interactive Chart Container -->
+                <div class="relative w-full h-[195px] bg-slate-50/50 rounded-lg p-2 border border-slate-100">
+                    <svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 600 200">
+                        <defs>
+                            <linearGradient id="sysGradientComp" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stop-color="#0284C7" stop-opacity="0.25"></stop>
+                                <stop offset="100%" stop-color="#0284C7" stop-opacity="0.0"></stop>
+                            </linearGradient>
+                            <linearGradient id="diaGradientComp" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stop-color="#06B6D4" stop-opacity="0.2"></stop>
+                                <stop offset="100%" stop-color="#06B6D4" stop-opacity="0.0"></stop>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- Horizontal Grid Lines & Y-Axis Labels -->
+                        <line stroke="#E2E8F0" stroke-dasharray="3 3" stroke-width="1" x1="35" x2="590" y1="20" y2="20"></line>
+                        <text fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="end" x="28" y="23">160</text>
+
+                        <line stroke="#FDE68A" stroke-dasharray="4 2" stroke-width="1.5" x1="35" x2="590" y1="55" y2="55"></line>
+                        <text fill="#D97706" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600" text-anchor="end" x="28" y="58">140</text>
+
+                        <line stroke="#CBD5E1" stroke-width="1" x1="35" x2="590" y1="90" y2="90"></line>
+                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="end" x="28" y="93">120</text>
+
+                        <line stroke="#E2E8F0" stroke-dasharray="3 3" stroke-width="1" x1="35" x2="590" y1="125" y2="125"></line>
+                        <text fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="end" x="28" y="128">100</text>
+
+                        <line stroke="#E2E8F0" stroke-width="1" x1="35" x2="590" y1="160" y2="160"></line>
+                        <text fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="end" x="28" y="163">80</text>
+
+                        <!-- Gradient Area Paths -->
+                        <path id="chartSysArea" d="M 55,72 Q 110,50 145,51 T 230,64 T 315,38 T 400,62 T 490,55 T 575,59 L 575,160 L 55,160 Z" fill="url(#sysGradientComp)"></path>
+                        <path id="chartDiaArea" d="M 55,156 Q 110,145 145,145 T 230,152 T 315,138 T 400,150 T 490,148 T 575,150 L 575,160 L 55,160 Z" fill="url(#diaGradientComp)"></path>
+
+                        <!-- Line Curves -->
+                        <path id="chartSysLine" d="M 55,72 Q 110,50 145,51 T 230,64 T 315,38 T 400,62 T 490,55 T 575,59" fill="none" stroke="#0284C7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+                        <path id="chartDiaLine" d="M 55,156 Q 110,145 145,145 T 230,152 T 315,138 T 400,150 T 490,148 T 575,150" fill="none" stroke="#06B6D4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+
+                        <!-- Data Points - Day 1 (T2) -->
+                        <circle class="chart-point" cx="55" cy="72" fill="#10B981" r="3.5" stroke="#FFFFFF" stroke-width="1.5"></circle>
+                        <circle class="chart-point" cx="55" cy="156" fill="#06B6D4" r="3" stroke="#FFFFFF" stroke-width="1"></circle>
+
+                        <!-- Day 2 (T3) -->
+                        <circle class="chart-point" cx="145" cy="51" fill="#F59E0B" r="4" stroke="#FFFFFF" stroke-width="1.5"></circle>
+                        <circle class="chart-point" cx="145" cy="145" fill="#06B6D4" r="3" stroke="#FFFFFF" stroke-width="1"></circle>
+
+                        <!-- Day 3 (T4) -->
+                        <circle class="chart-point" cx="230" cy="64" fill="#0284C7" r="3.5" stroke="#FFFFFF" stroke-width="1.5"></circle>
+                        <circle class="chart-point" cx="230" cy="152" fill="#06B6D4" r="3" stroke="#FFFFFF" stroke-width="1"></circle>
+
+                        <!-- Day 4 (T5) - Peak Warning Indicator -->
+                        <circle class="chart-point" cx="315" cy="38" fill="#EF4444" r="5" stroke="#FFFFFF" stroke-width="1.5"></circle>
+                        <rect fill="#0F172A" height="18" opacity="0.9" rx="4" width="58" x="286" y="12"></rect>
+                        <text fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="700" text-anchor="middle" x="315" y="24">148/92 (!)</text>
+                        <circle class="chart-point" cx="315" cy="138" fill="#EF4444" r="3.5" stroke="#FFFFFF" stroke-width="1"></circle>
+
+                        <!-- Day 5 (T6) -->
+                        <circle class="chart-point" cx="400" cy="62" fill="#0284C7" r="3.5" stroke="#FFFFFF" stroke-width="1.5"></circle>
+                        <circle class="chart-point" cx="400" cy="150" fill="#06B6D4" r="3" stroke="#FFFFFF" stroke-width="1"></circle>
+
+                        <!-- Day 6 (T7) -->
+                        <circle class="chart-point" cx="490" cy="55" fill="#F59E0B" r="4" stroke="#FFFFFF" stroke-width="1.5"></circle>
+                        <circle class="chart-point" cx="490" cy="148" fill="#06B6D4" r="3" stroke="#FFFFFF" stroke-width="1"></circle>
+
+                        <!-- Day 7 (Hôm nay) -->
+                        <circle class="chart-point" cx="575" cy="59" fill="#F59E0B" r="4.5" stroke="#FFFFFF" stroke-width="1.5"></circle>
+                        <circle class="chart-point" cx="575" cy="150" fill="#06B6D4" r="3" stroke="#FFFFFF" stroke-width="1"></circle>
+
+                        <!-- X-Axis Labels -->
+                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="middle" x="55" y="182">T2 (17)</text>
+                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="middle" x="145" y="182">T3 (18)</text>
+                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="middle" x="230" y="182">T4 (19)</text>
+                        <text fill="#EF4444" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="700" text-anchor="middle" x="315" y="182">T5 (20)</text>
+                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="middle" x="400" y="182">T6 (21)</text>
+                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="middle" x="490" y="182">T7 (22)</text>
+                        <text fill="#0284C7" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="700" text-anchor="middle" x="575" y="182">H.nay</text>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Chart Footer Legend -->
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-1 bg-primary rounded-full"></span>
+                        <span class="text-[11px] font-semibold text-slate-700">Tâm thu (SYS)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-1 bg-cyan-500 rounded-full"></span>
+                        <span class="text-[11px] font-semibold text-slate-700">Tâm trương (DIA)</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2.5 text-[11px] text-slate-500">
+                    <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Bình thường (&lt;120)</span>
+                    <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Lưu ý (120-139)</span>
+                    <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Nguy cơ (&ge;140)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: QUICK LOG FORM -->
+        <div id="quickLogCard" class="lg:col-span-5 bg-white rounded-xl border border-slate-200/90 shadow-card p-5 relative">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3.5">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-sky-100 text-primary flex items-center justify-center font-bold">
+                        <span class="material-symbols-outlined text-[18px]">bolt</span>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 leading-tight uppercase m-0">Ghi Nhận Nhanh</h3>
+                        <p class="text-[10px] text-slate-400 m-0">Đo và đồng bộ tức thì với hồ sơ gia đình</p>
+                    </div>
+                </div>
+                <span class="material-symbols-outlined text-slate-400 text-[20px]" title="Chỉ số sinh hiệu">speed</span>
+            </div>
+
+            <form id="quickLogForm" class="space-y-3">
+                <!-- Chọn Thành viên -->
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="member-select">
+                        Thành viên gia đình <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <select id="member-select" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer">
+                            <option value="khang" selected>Trần Quốc Khang (Ông nội - 68t)</option>
+                            <option value="dat">Trần Viết Đạt (Bố - 38t)</option>
+                            <option value="ha">Lê Thu Hà (Mẹ - 35t)</option>
+                            <option value="an">Trần Bảo An (Con trai - 8t)</option>
+                        </select>
+                        <span class="material-symbols-outlined absolute right-2.5 top-2 text-slate-400 pointer-events-none text-[18px]">expand_more</span>
+                    </div>
+                </div>
+
+                <!-- Huyết áp: Tâm thu SYS & Tâm trương DIA -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[11px] font-semibold text-slate-700 m-0">Huyết áp (Tâm thu / Tâm trương)</label>
+                        <span class="text-[10px] text-slate-400 font-medium">mmHg</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="relative">
+                            <input id="inputSys" class="w-full h-9 pl-3 pr-10 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" max="250" min="60" placeholder="120" type="number" value="135" required />
+                            <span class="absolute right-2.5 top-2.5 text-[10px] font-bold text-slate-400 pointer-events-none">SYS</span>
+                        </div>
+                        <div class="relative">
+                            <input id="inputDia" class="w-full h-9 pl-3 pr-10 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" max="150" min="40" placeholder="80" type="number" value="84" required />
+                            <span class="absolute right-2.5 top-2.5 text-[10px] font-bold text-slate-400 pointer-events-none">DIA</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nhịp tim & Đường huyết -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="heart-rate">Nhịp tim (bpm)</label>
+                        <div class="relative">
+                            <input id="heart-rate" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="75" type="number" value="76" />
+                            <span class="material-symbols-outlined absolute right-2.5 top-2 text-rose-500 text-[16px]">favorite</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="blood-glucose">Đường huyết (mmol/L)</label>
+                        <div class="relative">
+                            <input id="blood-glucose" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="5.5" step="0.1" type="number" value="6.5" />
+                            <span class="material-symbols-outlined absolute right-2.5 top-2 text-amber-500 text-[16px]">water_drop</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chiều cao & Cân nặng (Tính BMI tự động) -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[11px] font-semibold text-slate-700 m-0">Chiều cao &amp; Cân nặng (Tính BMI)</label>
+                        <span id="bmiBadge" class="text-[10px] font-bold px-1.5 py-0.2 rounded bmi-badge-normal transition-all">BMI: 22.4 (Chuẩn)</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="relative">
+                            <input id="height-input" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="168" type="number" step="0.5" value="168" />
+                            <span class="absolute right-2 top-2.5 text-[10px] font-semibold text-slate-400 pointer-events-none">cm</span>
+                        </div>
+                        <div class="relative">
+                            <input id="weight-input" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="63.2" type="number" step="0.1" value="63.2" />
+                            <span class="absolute right-2 top-2.5 text-[10px] font-semibold text-slate-400 pointer-events-none">kg</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thời điểm đo -->
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="time-context">Thời điểm đo</label>
+                    <div class="relative">
+                        <select id="time-context" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer">
+                            <option value="post-bf" selected>Sau ăn sáng 30p</option>
+                            <option value="fasting">Lúc đói (Sáng)</option>
+                            <option value="post-lunch">Sau ăn trưa 2h</option>
+                            <option value="night">Trước khi ngủ</option>
+                        </select>
+                        <span class="material-symbols-outlined absolute right-2.5 top-2 text-slate-400 pointer-events-none text-[16px]">expand_more</span>
+                    </div>
+                </div>
+
+                <!-- Nút Lưu chỉ số & Đồng bộ -->
+                <div class="pt-2">
+                    <button id="btnSubmitQuickLog" class="w-full h-10 rounded-xl bg-primary hover:bg-[#0369a1] text-white text-xs font-bold shadow-md shadow-sky-600/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer border-0" type="submit">
+                        <span class="material-symbols-outlined text-[18px]">sync</span>
+                        <span>Lưu chỉ số &amp; Đồng bộ</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+
+<!-- Floating Toast Container -->
+<div id="vitalsToast" class="fixed bottom-6 right-6 z-50 transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300 max-w-sm">
+    <div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700 flex items-center gap-3">
+        <div id="toastIconWrapper" class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-[18px]">check_circle</span>
+        </div>
+        <div>
+            <p id="toastTitle" class="text-xs font-bold text-white m-0">Đồng bộ thành công</p>
+            <p id="toastMessage" class="text-[11px] text-slate-300 mt-0.5 m-0">Chỉ số sinh hiệu đã được ghi nhận.</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Tính toán BMI tự động dựa trên Chiều cao & Cân nặng
+        function calculateBmi() {
+            var heightCm = parseFloat(document.getElementById('height-input').value);
+            var weightKg = parseFloat(document.getElementById('weight-input').value);
+            var badge = document.getElementById('bmiBadge');
+
+            if (heightCm > 0 && weightKg > 0) {
+                var heightM = heightCm / 100;
+                var bmi = (weightKg / (heightM * heightM)).toFixed(1);
+                var category = "Chuẩn";
+                var badgeClass = "bmi-badge-normal";
+
+                if (bmi < 18.5) {
+                    category = "Thiếu cân";
+                    badgeClass = "bmi-badge-under";
+                } else if (bmi >= 18.5 && bmi <= 24.9) {
+                    category = "Chuẩn";
+                    badgeClass = "bmi-badge-normal";
+                } else if (bmi >= 25 && bmi <= 29.9) {
+                    category = "Tiền béo phì";
+                    badgeClass = "bmi-badge-over";
+                } else {
+                    category = "Béo phì";
+                    badgeClass = "bmi-badge-obese";
+                }
+
+                badge.className = "text-[10px] font-bold px-1.5 py-0.2 rounded transition-all " + badgeClass;
+                badge.textContent = "BMI: " + bmi + " (" + category + ")";
+            }
+        }
+
+        document.getElementById('height-input').addEventListener('input', calculateBmi);
+        document.getElementById('weight-input').addEventListener('input', calculateBmi);
+
+        // Toast thông báo tương tác hiện đại
+        var toastTimer = null;
+        function showToast(title, message, isSuccess = true) {
+            var toast = document.getElementById('vitalsToast');
+            var titleEl = document.getElementById('toastTitle');
+            var msgEl = document.getElementById('toastMessage');
+            var iconWrap = document.getElementById('toastIconWrapper');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            if (isSuccess) {
+                iconWrap.className = "w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0";
+                iconWrap.innerHTML = '<span class="material-symbols-outlined text-[18px]">check_circle</span>';
+            } else {
+                iconWrap.className = "w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center flex-shrink-0";
+                iconWrap.innerHTML = '<span class="material-symbols-outlined text-[18px]">info</span>';
+            }
+
+            toast.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(function () {
+                toast.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3500);
+        }
+
+        // Tương tác nút "Nhập chỉ số" từ Card -> chuyển chọn nhanh và focus form
+        function quickFillMember(val, name) {
+            var select = document.getElementById('member-select');
+            select.value = val;
+            var card = document.getElementById('quickLogCard');
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Highlight viền card
+            card.classList.add('ring-2', 'ring-primary');
+            setTimeout(function () {
+                card.classList.remove('ring-2', 'ring-primary');
+            }, 1500);
+
+            showToast("Đã chọn thành viên", "Đang sẵn sàng ghi nhận chỉ số cho " + name, false);
+            document.getElementById('inputSys').focus();
+        }
+
+        // Tương tác Tab lọc biểu đồ
+        var memberAverages = {
+            'all': '134/84',
+            'khang': '138/85',
+            'dat': '118/78',
+            'ha': '110/72',
+            'an': '102/65'
+        };
+
+        function filterChartMember(memberKey, btn) {
+            document.querySelectorAll('.chart-tab-btn').forEach(function (b) {
+                b.className = "chart-tab-btn px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 hover:text-slate-900 transition-colors whitespace-nowrap border-0 bg-transparent cursor-pointer";
+            });
+            btn.className = "chart-tab-btn px-2.5 py-1 rounded-md bg-white text-primary text-[11px] font-bold shadow-xs whitespace-nowrap border-0 cursor-pointer";
+
+            var avg = memberAverages[memberKey] || '134/84';
+            var avgBadge = document.getElementById('vitalsAvgBadge');
+            avgBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span>TB: <strong class="font-bold text-slate-900">' + avg + '</strong> mmHg</span>';
+        }
+
+        // Xuất báo cáo PDF
+        document.getElementById('btnExportPdf').addEventListener('click', function () {
+            showToast("Đang tạo báo cáo PDF", "Bản tóm tắt chỉ số sinh hiệu 7 ngày đang được chuẩn bị để tải xuống...");
+        });
+
+        // Xử lý submit form ghi nhận nhanh
+        document.getElementById('quickLogForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var select = document.getElementById('member-select');
+            var memberName = select.options[select.selectedIndex].text.split('(')[0].trim();
+            var sys = document.getElementById('inputSys').value;
+            var dia = document.getElementById('inputDia').value;
+
+            showToast("Ghi nhận thành công!", "Đã đồng bộ huyết áp " + sys + "/" + dia + " mmHg cho " + memberName);
+        });
+
+        // Khởi tạo tính BMI lần đầu
+        calculateBmi();
+    </script>
+}

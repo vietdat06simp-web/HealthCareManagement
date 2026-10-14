@@ -1,0 +1,177 @@
+/* ==========================================================================
+   Members & Vitals Module Styles
+   ========================================================================== */
+
+/* Typography & Google Font classes */
+.font-headline-lg {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 800;
+}
+
+@media (min-width: 768px) {
+  .font-headline-lg {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+  }
+}
+
+.font-label-md {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.font-label-sm {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.font-body-md {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.font-metric-num {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Material Symbols Outlined font-face */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'liga';
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Card Shadows & Hover Transitions */
+.shadow-card {
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+}
+
+.shadow-cardHover,
+.hover\:shadow-cardHover:hover {
+  box-shadow: 0 10px 25px -4px rgba(2, 132, 199, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+}
+
+/* Primary Color Utilities Fallback */
+.text-primary {
+  color: #0284C7 !important;
+}
+
+.bg-primary {
+  background-color: #0284C7 !important;
+}
+
+.border-primary {
+  border-color: #0284C7 !important;
+}
+
+.hover\:text-primary:hover {
+  color: #0284C7 !important;
+}
+
+.hover\:bg-primary:hover {
+  background-color: #0369a1 !important;
+}
+
+.focus\:border-primary:focus {
+  border-color: #0284C7 !important;
+}
+
+/* Member Card hover effects */
+.member-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.member-card:hover {
+  border-color: #BAE6FD;
+  transform: translateY(-2px);
+}
+
+/* Vitals Chart SVG Interactive styling */
+.chart-point {
+  transition: r 0.15s ease, stroke-width 0.15s ease;
+  cursor: pointer;
+}
+
+.chart-point:hover {
+  r: 6;
+  stroke-width: 2.5;
+}
+
+/* BMI status badge */
+.bmi-badge-normal {
+  background-color: #ECFDF5;
+  color: #047857;
+  border: 1px solid #A7F3D0;
+}
+
+.bmi-badge-under {
+  background-color: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+
+.bmi-badge-over {
+  background-color: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+.bmi-badge-obese {
+  background-color: #FEF2F2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
+
+/* ==========================================================================
+   Header & Navbar Safety Isolation
+   Ensure Layout Header & Top Navbar are never affected by module styles
+   ========================================================================== */
+.app-header,
+.app-navbar,
+#topNavbarContent,
+.app-nav-menu,
+.nav-right-cluster,
+.user-profile-chip {
+  visibility: visible !important;
+}
+
+@media (min-width: 992px) {
+  #topNavbarContent {
+    display: flex !important;
+    visibility: visible !important;
+  }
+}
