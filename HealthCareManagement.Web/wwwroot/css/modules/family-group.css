@@ -1,0 +1,54 @@
+/* ==========================================================================
+   Family Group Module Styles
+   ========================================================================== */
+
+body {
+  background-color: #F8FAFC;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #0F172A;
+  -webkit-font-smoothing: antialiased;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+
+/* Card Shadows & Hover Transitions */
+.shadow-card {
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+}
+
+.shadow-cardHover,
+.hover\:shadow-cardHover:hover {
+  box-shadow: 0 10px 25px -4px rgba(2, 132, 199, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+}
+
+/* ==========================================================================
+   Header & Navbar Safety Isolation
+   Ensure Layout Header & Top Navbar are never affected by module styles
+   ========================================================================== */
+.app-header,
+.app-navbar,
+#topNavbarContent,
+.app-nav-menu,
+.nav-right-cluster,
+.user-profile-chip {
+  visibility: visible !important;
+}
+
+@media (min-width: 992px) {
+  #topNavbarContent {
+    display: flex !important;
+    visibility: visible !important;
+  }
+}

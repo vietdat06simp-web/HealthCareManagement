@@ -103,6 +103,36 @@ input:focus-visible {
   justify-content: space-between;
 }
 
+/* Ensure Navbar Collapse & elements are always visible on desktop and immune to any utility clashes */
+#topNavbarContent,
+.app-navbar .navbar-collapse,
+.app-header .navbar-collapse {
+  visibility: visible !important;
+}
+
+@media (min-width: 992px) {
+  #topNavbarContent.collapse,
+  .app-navbar .navbar-collapse.collapse,
+  .app-header .navbar-collapse.collapse {
+    display: flex !important;
+    visibility: visible !important;
+    flex-basis: auto !important;
+    flex-grow: 1 !important;
+  }
+}
+
+@media (max-width: 991.98px) {
+  #topNavbarContent.collapse:not(.show),
+  .app-navbar .navbar-collapse.collapse:not(.show) {
+    display: none !important;
+  }
+  #topNavbarContent.show,
+  .app-navbar .navbar-collapse.show {
+    display: block !important;
+    visibility: visible !important;
+  }
+}
+
 /* --- Brand Logo --- */
 .brand-logo {
   text-decoration: none;
@@ -143,7 +173,7 @@ input:focus-visible {
 
 /* --- Navigation Links --- */
 .app-nav-menu {
-  display: flex;
+  display: flex !important;
   align-items: center;
   gap: 0.25rem;
 }
@@ -189,7 +219,7 @@ input:focus-visible {
 
 /* --- Right Cluster (Search, Notification, Profile) --- */
 .nav-right-cluster {
-  display: flex;
+  display: flex !important;
   align-items: center;
 }
 
@@ -279,7 +309,7 @@ input:focus-visible {
 
 /* Profile Chip */
 .user-profile-chip {
-  display: flex;
+  display: flex !important;
   align-items: center;
   gap: 0.5rem;
   padding: 0.25rem 0.75rem 0.25rem 0.35rem;
