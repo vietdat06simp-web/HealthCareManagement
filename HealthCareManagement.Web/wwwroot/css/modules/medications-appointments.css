@@ -1,0 +1,247 @@
+/* ==========================================================================
+   Medications & Appointments Module Styles (Nhắc Uống Thuốc & Lịch Tái Khám)
+   ========================================================================== */
+
+/* Typography & Google Font Classes */
+.font-headline-lg {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 1.875rem;
+  line-height: 2.375rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.font-headline-md {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 1.375rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.font-headline-sm {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+}
+
+.font-title-md {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.375rem;
+  font-weight: 600;
+}
+
+.font-body-lg {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 400;
+}
+
+.font-body-md {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+}
+
+.font-body-sm {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+  font-weight: 400;
+}
+
+.font-label-lg {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+}
+
+.font-label-md {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.font-label-sm {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.6875rem;
+  line-height: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.font-metric-num {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 1.75rem;
+  line-height: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Material Symbols Outlined font styling */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar for compact overflow */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Tab Switcher Button Styles */
+.view-tab-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  border: 1px solid transparent;
+}
+
+.view-tab-btn.active {
+  background-color: #ffffff;
+  color: #006194;
+  border-color: #d3e4fe;
+  box-shadow: 0 2px 6px -1px rgba(0, 97, 148, 0.12), 0 2px 4px -2px rgba(0, 97, 148, 0.08);
+}
+
+.view-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 20%;
+  right: 20%;
+  height: 3px;
+  background-color: #06B6D4;
+  border-radius: 9999px;
+}
+
+/* Dose Card Hover & Status Styles */
+.dose-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  border: 1px solid #e2e8f0;
+}
+
+.dose-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -4px rgba(0, 97, 148, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+}
+
+.dose-item {
+  transition: all 0.2s ease;
+  border: 1px solid #f1f5f9;
+}
+
+.dose-item:hover {
+  border-color: #cbd5e1;
+  background-color: #ffffff;
+}
+
+.dose-item.completed {
+  background-color: #f5fff6;
+  border-color: #bbf7d0;
+}
+
+/* Appointment Table Row */
+.appointment-row {
+  transition: background-color 0.18s ease;
+}
+
+.appointment-row:hover {
+  background-color: #f8faff;
+}
+
+/* Action button micro-interactions */
+.btn-action-primary {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-action-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 97, 148, 0.25);
+}
+
+.btn-action-primary:active {
+  transform: translateY(0);
+}
+
+.btn-action-secondary {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-action-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 104, 122, 0.2);
+}
+
+.btn-action-secondary:active {
+  transform: translateY(0);
+}
+
+/* Modal and Toast Animation */
+.modal-fade-in {
+  animation: modalFadeIn 0.25s ease-out forwards;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ==========================================================================
+   Header & Navbar Safety Isolation
+   Ensure Layout Header & Top Navbar are never affected by module styles
+   ========================================================================== */
+.app-header,
+.app-navbar,
+#topNavbarContent,
+.app-nav-menu,
+.nav-right-cluster,
+.user-profile-chip {
+  visibility: visible !important;
+}
+
+@media (min-width: 992px) {
+  #topNavbarContent {
+    display: flex !important;
+    visibility: visible !important;
+  }
+}
