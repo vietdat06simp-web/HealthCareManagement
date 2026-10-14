@@ -1,0 +1,213 @@
+@{
+    Layout = null;
+}
+@model HealthCareManagement.Web.Models.ViewModels.Account.LoginViewModel
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng Nhập - Family Health Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/modules/auth.css" asp-append-version="true" />
+</head>
+<body class="auth-body">
+
+    <!-- Background Ambient Dot Pattern -->
+    <div class="fixed-ambient-dots bg-dot-pattern"></div>
+
+    <!-- Main Card Container -->
+    <div class="auth-card-container">
+
+        <!-- ==================== LEFT SHOWCASE COLUMN ==================== -->
+        <section class="showcase-pane">
+            <div class="showcase-content">
+                <!-- Brand Header -->
+                <div class="brand-header">
+                    <div class="brand-icon-box">
+                        <svg viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h2l1-2 2 4 1-2h2"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="brand-name">Family Health Hub</div>
+                        <div class="brand-slogan">Sổ sức khỏe gia đình thông minh &amp; Đa tầng bảo mật</div>
+                    </div>
+                </div>
+
+                <!-- Features Highlights -->
+                <div class="features-list">
+                    <div class="feature-item">
+                        <div class="feature-icon-wrapper">
+                            <svg viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                            </svg>
+                        </div>
+                        <span class="feature-text">Đồng bộ dữ liệu BHYT &amp; VNeID</span>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon-wrapper">
+                            <svg viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <span class="feature-text">Cảnh báo chỉ số sinh tồn tức thì</span>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon-wrapper">
+                            <svg viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                        </div>
+                        <span class="feature-text">Lưu trữ hồ sơ xét nghiệm trọn đời</span>
+                    </div>
+                </div>
+
+                <!-- Bottom Security Tag -->
+                <div class="showcase-footer">
+                    <div class="security-endorsement">
+                        <svg viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                        <span>Mã hóa đầu cuối chuẩn HIPAA y tế</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== RIGHT FORM COLUMN ==================== -->
+        <main class="form-pane">
+            <div class="form-box">
+                <!-- Mobile Brand (shown on mobile devices) -->
+                <div class="mobile-brand">
+                    <div class="brand-icon-box">
+                        <svg viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h2l1-2 2 4 1-2h2"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div style="font-size: 18px; font-weight: 800; color: #0284C7;">Family Health Hub</div>
+                        <div style="font-size: 12px; color: #64748B;">Sổ sức khỏe gia đình</div>
+                    </div>
+                </div>
+
+                <!-- Form Header -->
+                <div class="form-header">
+                    <div class="welcome-badge">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Cổng Đăng Nhập An Toàn
+                    </div>
+                    <h2 class="form-title">Đăng nhập tài khoản</h2>
+                    <p class="form-subtitle">Chào mừng bạn trở lại với tổ ấm y tế &amp; sức khỏe của gia đình.</p>
+                </div>
+
+                <!-- Form Elements -->
+                <form asp-controller="Account" asp-action="Login" method="post" class="auth-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="ReturnUrl" />
+
+                    <!-- Field 1: Email / Phone -->
+                    <div class="input-group">
+                        <label class="input-label" asp-for="Email">
+                            Email hoặc Số điện thoại
+                        </label>
+                        <div class="input-wrapper">
+                            <input asp-for="Email" class="text-input" placeholder="nhapemail@example.com hoặc 0901 234 567" required />
+                            <svg class="input-icon" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <span asp-validation-for="Email" class="field-validation-error"></span>
+                    </div>
+
+                    <!-- Field 2: Password -->
+                    <div class="input-group">
+                        <label class="input-label" asp-for="Password">
+                            Mật khẩu
+                        </label>
+                        <div class="input-wrapper">
+                            <input asp-for="Password" type="password" id="login-password" class="text-input has-toggle" placeholder="Nhập mật khẩu của bạn" required />
+                            <svg class="input-icon" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                            <button type="button" class="password-toggle-btn" aria-label="Hiện/ẩn mật khẩu" onclick="togglePasswordVisibility('login-password')">
+                                <svg viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Password" class="field-validation-error"></span>
+                    </div>
+
+                    <!-- Remember me & Forgot Password -->
+                    <div class="form-options-row">
+                        <label class="checkbox-label" asp-for="RememberMe">
+                            <input type="checkbox" asp-for="RememberMe" class="custom-checkbox" />
+                            <span>Ghi nhớ phiên đăng nhập</span>
+                        </label>
+                        <a href="#" class="forgot-link">Quên mật khẩu?</a>
+                    </div>
+
+                    <!-- Primary Submit Button -->
+                    <button type="submit" class="submit-btn">
+                        <span>Đăng nhập vào Hệ Thống</span>
+                        <svg viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                        </svg>
+                    </button>
+
+                    <!-- Divider -->
+                    <div class="divider-row">
+                        <div class="divider-line"></div>
+                        <span class="divider-text">Hoặc đăng nhập nhanh qua</span>
+                        <div class="divider-line"></div>
+                    </div>
+
+                    <!-- Social / Identity SSO buttons -->
+                    <div class="social-auth-grid">
+                        <button type="button" class="social-btn">
+                            <svg viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"></path>
+                                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"></path>
+                                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.16 0 9.94 0 12s.45 3.84 1.25 5.42l4.03-3.15z"></path>
+                                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"></path>
+                            </svg>
+                            <span>Google ID</span>
+                        </button>
+
+                        <button type="button" class="social-btn">
+                            <div class="vneid-badge-icon">ID</div>
+                            <span>VNeID / BHYT</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Footer link: chuyển sang Đăng ký -->
+                <div class="form-footer-switch">
+                    <span>Chưa có tài khoản gia đình?</span>
+                    <a asp-controller="Account" asp-action="Register" class="switch-link">Đăng ký ngay</a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.type = input.type === 'password' ? 'text' : 'password';
+            }
+        }
+    </script>
+</body>
+</html>
