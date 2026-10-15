@@ -1,0 +1,21 @@
+@{
+    ViewData["Title"] = "Từ chối truy cập";
+}
+
+<div class="d-flex flex-column align-items-center justify-content-center py-5 text-center">
+    <div class="rounded-circle p-4 mb-4" style="background-color: #FEF2F2; color: #EF4444; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
+        <i class="bi bi-shield-lock-fill" style="font-size: 2.5rem;"></i>
+    </div>
+    <h2 class="fw-bold text-slate-900 mb-2">Truy Cập Bị Từ Chối</h2>
+    <p class="text-muted max-w-[480px] mb-4">
+        Bạn không có quyền truy cập vào chức năng hoặc tổ ấm này. Vui lòng liên hệ Chủ hộ gia đình để được phân quyền.
+    </p>
+    <div class="d-flex gap-3">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary rounded-pill px-4 py-2 font-semibold" style="background: linear-gradient(135deg, #0284C7, #06B6D4); border: none;">
+            Về Trang Chủ
+        </a>
+        <a asp-controller="Account" asp-action="Login" class="btn btn-outline-secondary rounded-pill px-4 py-2 font-semibold">
+            Đăng Nhập Khác
+        </a>
+    </div>
+</div>

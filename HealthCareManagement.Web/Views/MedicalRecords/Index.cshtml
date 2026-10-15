@@ -1,3 +1,4 @@
+@model HealthCareManagement.Web.Models.ViewModels.MedicalRecordsIndexViewModel
 @{
     ViewData["Title"] = "Hồ Sơ Y Tế - Bệnh Án Điện Tử & Cận Lâm Sàng";
 }
@@ -97,7 +98,7 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h1 class="font-headline-sm text-slate-900 tracking-tight m-0 text-lg md:text-xl font-bold">Hồ Sơ Bệnh Án Điện Tử</h1>
-                        <span id="encounterCountBadge" class="px-2.5 py-0.5 rounded-full bg-sky-100 text-[#0284C7] font-label-sm font-bold text-xs border border-sky-200">12 đợt khám</span>
+                        <span id="encounterCountBadge" class="px-2.5 py-0.5 rounded-full bg-sky-100 text-[#0284C7] font-label-sm font-bold text-xs border border-sky-200">@(Model?.MedicalRecords?.Count ?? 0) đợt khám</span>
                     </div>
                     <p class="font-body-sm text-slate-500 m-0 mt-0.5 text-xs">Lưu trữ tập trung chẩn đoán, kết quả cận lâm sàng và toa thuốc gia đình</p>
                 </div>
@@ -133,11 +134,15 @@
                             </div>
                         </div>
                         <select id="patientSelector" class="w-full h-10 pl-9 pr-8 bg-slate-50/80 hover:bg-white text-slate-800 font-semibold text-xs rounded-xl border border-slate-200 cursor-pointer focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100 transition-all appearance-none shadow-xs">
-                            <option value="all">Tất cả thành viên trong nhà</option>
-                            <option value="khang" selected>Trần Quốc Khang • Ông nội (68t)</option>
-                            <option value="dat">Trần Viết Đạt • Bố (38t)</option>
-                            <option value="ha">Lê Thu Hà • Mẹ (35t)</option>
-                            <option value="an">Trần Bảo An • Con trai (8t)</option>
+                            <option value="all" selected>Tất cả thành viên trong nhà</option>
+                            @if (Model?.Members != null)
+                            {
+                                foreach (var m in Model.Members)
+                                {
+                                    var age = DateTime.Today.Year - m.DateOfBirth.Year;
+                                    <option value="@m.Id">@m.FullName • @m.Relationship (@(age)t)</option>
+                                }
+                            }
                         </select>
                         <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-slate-400">
                             <span class="material-symbols-outlined text-[18px]">unfold_more</span>
@@ -227,291 +232,106 @@
 
             <!-- Timeline Container with connecting vertical line -->
             <div class="timeline-track pl-6 space-y-6">
-                <!-- ENCOUNTER CARD 1: Bệnh viện Bạch Mai / Vinmec - Tim mạch & Nội tiết -->
-                <div class="relative encounter-item" data-member="khang" data-type="routine" data-specialty="cardiology">
-                    <!-- Timeline Node Pin -->
-                    <div class="timeline-node bg-primary ring-4 ring-primary-fixed shadow-sm">
-                        <span class="w-1.5 h-1.5 rounded-full bg-surface-container-lowest"></span>
-                    </div>
-
-                    <article class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-slate-200/80 record-card">
-                        <!-- Header Badges: Date, Facility, Department, Code -->
-                        <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-slate-100 mb-3.5">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span class="px-3 py-1 rounded-full bg-primary text-on-primary font-label-md text-xs font-semibold tracking-wide">
-                                    15/10/2026
-                                </span>
-                                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container-low text-on-surface font-label-md text-xs font-medium">
-                                    <span class="material-symbols-outlined text-tertiary text-[16px]" style="font-variation-settings: 'FILL' 1;">domain_verification</span>
-                                    Bệnh viện Bạch Mai - Viện Tim Mạch Quốc Gia
-                                </span>
-                                <span class="px-2.5 py-1 rounded-md bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-[11px] font-semibold">
-                                    Khoa Tim Mạch &amp; Nội Tiết
-                                </span>
+                @if (Model?.MedicalRecords != null && Model.MedicalRecords.Any())
+                {
+                    foreach (var record in Model.MedicalRecords)
+                    {
+                        <div class="relative encounter-item" data-member="@record.MemberId" data-type="routine" data-specialty="all">
+                            <!-- Timeline Node Pin -->
+                            <div class="timeline-node bg-primary ring-4 ring-primary-fixed shadow-sm">
+                                <span class="w-1.5 h-1.5 rounded-full bg-surface-container-lowest"></span>
                             </div>
-                            <span class="font-label-sm text-outline font-mono">#BM-2026-8812</span>
-                        </div>
 
-                        <!-- Doctor In-Charge Details -->
-                        <div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low mb-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0 font-bold">
-                                    <span class="material-symbols-outlined text-[20px]">stethoscope</span>
-                                </div>
-                                <div>
+                            <article class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-slate-200/80 record-card">
+                                <!-- Header Badges: Date, Facility, Department, Code -->
+                                <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-slate-100 mb-3.5">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="px-3 py-1 rounded-full bg-primary text-on-primary font-label-md text-xs font-semibold tracking-wide">
+                                            @record.ExamDate.ToString("dd/MM/yyyy")
+                                        </span>
+                                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container-low text-on-surface font-label-md text-xs font-medium">
+                                            <span class="material-symbols-outlined text-tertiary text-[16px]" style="font-variation-settings: 'FILL' 1;">domain_verification</span>
+                                            @record.HospitalName
+                                        </span>
+                                        @if (!string.IsNullOrEmpty(record.DiagnosisCode))
+                                        {
+                                            <span class="px-2.5 py-1 rounded-md bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-[11px] font-semibold">
+                                                Mã ICD-10: @record.DiagnosisCode
+                                            </span>
+                                        }
+                                    </div>
                                     <div class="flex items-center gap-2">
-                                        <span class="font-title-md text-on-surface font-bold text-sm">BS. CKI Nguyễn Văn Tuấn</span>
-                                        <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-surface-container-lowest text-tertiary font-label-sm text-[10px] font-semibold border border-emerald-200">
-                                            <span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
-                                            Chữ ký số hợp lệ
+                                        <span class="text-xs text-slate-500 font-medium">
+                                            Bệnh nhân: <strong class="text-slate-800">@(record.Member?.FullName ?? "Thành viên")</strong>
+                                        </span>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Hoàn tất
                                         </span>
                                     </div>
-                                    <span class="font-body-sm text-on-surface-variant text-xs">Trưởng đơn vị Quản lý Bệnh lý mạn tính người cao tuổi</span>
                                 </div>
-                            </div>
-                            <button onclick="showToast('Xác thực chữ ký số', 'BS. CKI Nguyễn Văn Tuấn • Chứng thư số Ban Cơ yếu Chính phủ')" class="hidden sm:inline-flex items-center gap-1 font-label-sm text-xs text-primary hover:text-primary-container font-medium p-1.5 border-0 bg-transparent cursor-pointer" type="button">
-                                <span class="material-symbols-outlined text-[16px]">history_edu</span>
-                                <span>Xem chữ ký</span>
-                            </button>
-                        </div>
 
-                        <!-- Clinical Findings & ICD-10 Diagnosis -->
-                        <div class="space-y-2.5 mb-4">
-                            <div>
-                                <span class="font-label-sm text-outline uppercase tracking-wider block mb-1">Chẩn đoán xác định &amp; Tình trạng lâm sàng</span>
-                                <p class="font-body-md text-on-surface leading-relaxed text-sm m-0">
-                                    Tái khám định kỳ tăng huyết áp vô căn &amp; Đái tháo đường Type 2 có kiểm soát tốt. Bệnh nhân không xuất hiện cơn đau thắt ngực, không hoa mắt chóng mặt tư thế, tuân thủ nghiêm ngặt phác đồ điều trị và chế độ dinh dưỡng.
-                                </p>
-                            </div>
-                            <div class="flex flex-wrap items-center gap-2 pt-1">
-                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container-high text-on-surface font-label-md text-xs">
-                                    <span class="w-2 h-2 rounded-full bg-primary"></span>
-                                    <span class="font-semibold text-primary">ICD-10: I10</span>
-                                    <span class="text-on-surface-variant">• Tăng huyết áp vô căn (nguyên phát)</span>
+                                <!-- Doctor & Diagnosis Summary -->
+                                <div class="mb-3">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h3 class="font-title-sm text-slate-900 font-bold m-0 text-sm md:text-base">@record.Diagnosis</h3>
+                                    </div>
+                                    <p class="font-body-sm text-slate-600 m-0 text-xs">
+                                        Bác sĩ điều trị: <strong class="text-slate-800">@(string.IsNullOrEmpty(record.DoctorName) ? "Bác sĩ chuyên khoa" : record.DoctorName)</strong>
+                                    </p>
                                 </div>
-                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container-high text-on-surface font-label-md text-xs">
-                                    <span class="w-2 h-2 rounded-full bg-secondary"></span>
-                                    <span class="font-semibold text-secondary">ICD-10: E11.9</span>
-                                    <span class="text-on-surface-variant">• ĐTĐ Type 2 không biến chứng</span>
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- Attachments Gallery: DICOM, PDF, ECG -->
-                        <div class="mb-4">
-                            <div class="flex items-center justify-between mb-2.5">
-                                <span class="font-label-sm text-outline uppercase tracking-wider block">Tệp đính kèm cận lâm sàng &amp; Hình ảnh học (3 tệp)</span>
-                                <span class="text-[11px] text-primary font-medium">Bảo mật mã hóa y khoa</span>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                                <!-- DICOM File Card -->
-                                <div class="p-3 rounded-lg bg-surface-container-low attachment-card flex flex-col justify-between">
-                                    <div class="flex items-start gap-2.5 mb-2">
-                                        <span class="material-symbols-outlined text-primary text-[24px]">radiology</span>
-                                        <div class="min-w-0 flex-1">
-                                            <p class="font-title-md text-xs text-on-surface truncate font-semibold m-0" title="X-Quang_Tim_Phoi_Thang.dcm">X-Quang_Tim_Phoi.dcm</p>
-                                            <span class="font-label-sm text-[10px] text-outline">DICOM PACS • 4.2 MB</span>
+                                @if (!string.IsNullOrEmpty(record.Conclusion))
+                                {
+                                    <!-- Clinical Conclusion / Instructions -->
+                                    <div class="p-3 rounded-lg bg-sky-50/60 border border-sky-100 text-xs text-slate-700 mb-3.5 flex items-start gap-2">
+                                        <span class="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">clinical_notes</span>
+                                        <div>
+                                            <strong class="text-slate-900">Kết luận &amp; Dặn dò:</strong>
+                                            <p class="m-0 mt-0.5 text-slate-600">@record.Conclusion</p>
                                         </div>
                                     </div>
-                                    <div class="flex items-center justify-between pt-2 border-t border-slate-200/50">
-                                        <button onclick="previewFile('X-Quang_Tim_Phoi.dcm', 'DICOM PACS')" class="font-label-sm text-xs text-primary font-medium hover:underline inline-flex items-center gap-1 border-0 bg-transparent cursor-pointer p-0" type="button">
-                                            <span class="material-symbols-outlined text-[14px]">visibility</span> Xem ảnh
-                                        </button>
-                                        <button onclick="downloadAttachment('X-Quang_Tim_Phoi.dcm')" class="text-on-surface-variant hover:text-primary transition-colors p-1 border-0 bg-transparent cursor-pointer" title="Tải tệp đính kèm" type="button">
-                                            <span class="material-symbols-outlined text-[16px]">download</span>
-                                        </button>
-                                    </div>
-                                </div>
+                                }
 
-                                <!-- PDF Report File Card -->
-                                <div class="p-3 rounded-lg bg-surface-container-low attachment-card flex flex-col justify-between">
-                                    <div class="flex items-start gap-2.5 mb-2">
-                                        <span class="material-symbols-outlined text-error text-[24px]">picture_as_pdf</span>
-                                        <div class="min-w-0 flex-1">
-                                            <p class="font-title-md text-xs text-on-surface truncate font-semibold m-0" title="Sinh_hoa_mau_18_chi_so.pdf">Sinh_hoa_mau_18_chi_so.pdf</p>
-                                            <span class="font-label-sm text-[10px] text-outline">PDF Report • 1.8 MB</span>
-                                        </div>
+                                <!-- Bottom Actions & Attachments -->
+                                <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2">
+                                        @if (record.MedicalAttachments != null && record.MedicalAttachments.Any())
+                                        {
+                                            <span class="text-xs text-slate-500 flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[16px] text-primary">attach_file</span>
+                                                @record.MedicalAttachments.Count tệp đính kèm
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-xs text-slate-400">Không có tệp đính kèm</span>
+                                        }
                                     </div>
-                                    <div class="flex items-center justify-between pt-2 border-t border-slate-200/50">
-                                        <button onclick="previewFile('Sinh_hoa_mau_18_chi_so.pdf', 'Kết quả xét nghiệm')" class="font-label-sm text-xs text-primary font-medium hover:underline inline-flex items-center gap-1 border-0 bg-transparent cursor-pointer p-0" type="button">
-                                            <span class="material-symbols-outlined text-[14px]">visibility</span> Xem kết quả
-                                        </button>
-                                        <button onclick="downloadAttachment('Sinh_hoa_mau_18_chi_so.pdf')" class="text-on-surface-variant hover:text-primary transition-colors p-1 border-0 bg-transparent cursor-pointer" title="Tải tệp đính kèm" type="button">
-                                            <span class="material-symbols-outlined text-[16px]">download</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- ECG Wave File Card -->
-                                <div class="p-3 rounded-lg bg-surface-container-low attachment-card flex flex-col justify-between">
-                                    <div class="flex items-start gap-2.5 mb-2">
-                                        <span class="material-symbols-outlined text-secondary text-[24px]">ecg_heart</span>
-                                        <div class="min-w-0 flex-1">
-                                            <p class="font-title-md text-xs text-on-surface truncate font-semibold m-0" title="Dien_tam_do_ECG_12_chuyen_dao.png">Dien_tam_do_ECG.png</p>
-                                            <span class="font-label-sm text-[10px] text-outline">Điện tâm đồ • 950 KB</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center justify-between pt-2 border-t border-slate-200/50">
-                                        <button onclick="previewFile('Dien_tam_do_ECG.png', 'Điện tâm đồ ECG')" class="font-label-sm text-xs text-primary font-medium hover:underline inline-flex items-center gap-1 border-0 bg-transparent cursor-pointer p-0" type="button">
-                                            <span class="material-symbols-outlined text-[14px]">visibility</span> Chi tiết sóng
-                                        </button>
-                                        <button onclick="downloadAttachment('Dien_tam_do_ECG.png')" class="text-on-surface-variant hover:text-primary transition-colors p-1 border-0 bg-transparent cursor-pointer" title="Tải tệp đính kèm" type="button">
-                                            <span class="material-symbols-outlined text-[16px]">download</span>
-                                        </button>
+                                    <div class="flex items-center gap-2">
+                                        <a asp-controller="MedicalRecords" asp-action="Details" asp-route-id="@record.Id" class="inline-flex items-center gap-1 font-label-md text-xs text-primary hover:text-primary-container font-semibold transition-colors text-decoration-none">
+                                            <span>Xem chi tiết bệnh án</span>
+                                            <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                                        </a>
                                     </div>
                                 </div>
-                            </div>
+                            </article>
                         </div>
-
-                        <!-- E-Prescription Snapshot -->
-                        <div class="p-4 rounded-xl bg-surface-container-low border border-slate-200/60">
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
-                                <div class="flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-primary text-[20px]">prescriptions</span>
-                                    <span class="font-title-md text-on-surface font-semibold text-xs sm:text-sm">Toa thuốc điện tử điều trị duy trì (30 ngày)</span>
-                                </div>
-                                <span class="font-label-sm text-xs text-tertiary font-semibold inline-flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Đang áp dụng
-                                </span>
-                            </div>
-
-                            <!-- Medicine Pills -->
-                            <div class="flex flex-wrap gap-2 mb-2.5">
-                                <span class="px-3 py-1.5 rounded-lg bg-surface-container-lowest text-on-surface font-body-sm text-xs font-medium shadow-xs flex items-center gap-1.5 border border-slate-200/70">
-                                    <span class="material-symbols-outlined text-primary text-[16px]">medication</span>
-                                    Amlodipine 5mg • <strong class="text-primary">1v/sáng (sau ăn)</strong>
-                                </span>
-                                <span class="px-3 py-1.5 rounded-lg bg-surface-container-lowest text-on-surface font-body-sm text-xs font-medium shadow-xs flex items-center gap-1.5 border border-slate-200/70">
-                                    <span class="material-symbols-outlined text-secondary text-[16px]">medication</span>
-                                    Metformin 850mg • <strong class="text-secondary">2v/ngày (trưa, tối)</strong>
-                                </span>
-                                <span class="px-3 py-1.5 rounded-lg bg-surface-container-lowest text-on-surface font-body-sm text-xs font-medium shadow-xs flex items-center gap-1.5 border border-slate-200/70">
-                                    <span class="material-symbols-outlined text-outline text-[16px]">medication</span>
-                                    Atorvastatin 20mg • <strong class="text-on-surface">1v/tối (trước ngủ)</strong>
-                                </span>
-                            </div>
-
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-slate-200/50">
-                                <p class="font-body-sm text-on-surface-variant text-xs italic m-0">
-                                    Dặn dò: Uống nhiều nước, kiểm tra chỉ số huyết áp mỗi sáng trước khi uống thuốc.
-                                </p>
-                                <button onclick="viewPrescriptionDetails('15/10/2026', 'Amlodipine, Metformin, Atorvastatin')" class="px-3 py-1.5 rounded-lg bg-secondary-fixed text-on-secondary-fixed-variant hover:bg-secondary-fixed-dim font-label-md text-xs font-semibold transition-colors shrink-0 border-0 cursor-pointer" type="button">
-                                    Xem chi tiết đơn thuốc
-                                </button>
-                            </div>
+                    }
+                }
+                else
+                {
+                    <div class="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center shadow-xs">
+                        <div class="w-16 h-16 rounded-2xl bg-sky-50 text-primary flex items-center justify-center mx-auto mb-4 border border-sky-100 shadow-inner">
+                            <span class="material-symbols-outlined text-[36px]">folder_off</span>
                         </div>
-                    </article>
-                </div>
-
-                <!-- ENCOUNTER CARD 2: Bệnh viện Đại học Y Dược / Đại học Y Hà Nội -->
-                <div class="relative encounter-item" data-member="khang" data-type="lab" data-specialty="allergy">
-                    <div class="timeline-node bg-secondary ring-4 ring-secondary-fixed shadow-sm">
-                        <span class="w-1.5 h-1.5 rounded-full bg-surface-container-lowest"></span>
+                        <h3 class="text-base font-bold text-slate-900 mb-1">Chưa có hồ sơ bệnh án nào</h3>
+                        <p class="text-xs text-slate-500 max-w-md mx-auto mb-6">Chưa có hồ sơ bệnh án hoặc đợt khám bệnh nào được ghi nhận cho các thành viên trong tổ ấm.</p>
+                        <button onclick="document.getElementById('btnAddNewEncounter').click()" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-xs sm:text-sm font-semibold hover:bg-sky-600 shadow-md shadow-sky-600/20 transition-all border-0 cursor-pointer">
+                            <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                            <span>+ Thêm đợt khám đầu tiên</span>
+                        </button>
                     </div>
-
-                    <article class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-slate-200/80 record-card">
-                        <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-slate-100 mb-3">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span class="px-3 py-1 rounded-full bg-surface-container-high text-on-surface font-label-md text-xs font-semibold">
-                                    28/09/2026
-                                </span>
-                                <span class="font-title-md text-on-surface font-semibold text-xs sm:text-sm">
-                                    Bệnh viện Đại học Y Dược TP.HCM (Khoa Dị Ứng)
-                                </span>
-                                <span class="px-2 py-0.5 rounded-md bg-surface-container-low text-on-surface-variant font-label-sm text-[11px]">
-                                    Khoa Dị Ứng &amp; Miễn Dịch Lâm Sàng
-                                </span>
-                            </div>
-                            <span class="font-label-sm text-outline font-mono">#UMP-2026-4401</span>
-                        </div>
-
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="material-symbols-outlined text-on-surface-variant text-[18px]">person</span>
-                            <span class="font-body-md text-xs text-on-surface-variant">Bác sĩ khám: <strong class="text-on-surface font-semibold">ThS. BS Trần Mai Phương</strong></span>
-                        </div>
-
-                        <div class="mb-4">
-                            <div class="flex flex-wrap items-center gap-2 mb-2">
-                                <span class="px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-xs font-semibold">
-                                    Cảnh báo: Dị ứng Penicillin &amp; NSAIDs (Mức độ vừa)
-                                </span>
-                                <span class="px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-xs">
-                                    Chẩn đoán phụ: Thiếu máu nhẹ thiếu sắt
-                                </span>
-                            </div>
-                            <p class="font-body-md text-on-surface-variant text-xs leading-relaxed m-0">
-                                Bệnh nhân từng nổi mề đay sau khi sử dụng Amoxicillin. Đã thực hiện test lẩy da khẳng định dị ứng nhóm Beta-lactam. Cập nhật thẻ cảnh báo dị ứng thuốc toàn hệ thống.
-                            </p>
-                        </div>
-
-                        <!-- Compact Attachments & Prescriptions -->
-                        <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-low text-on-surface font-label-sm text-xs border border-slate-200/50">
-                                    <span class="material-symbols-outlined text-error text-[15px]">description</span>
-                                    Test_di_ung_thuoc.pdf (1.2 MB)
-                                    <button onclick="downloadAttachment('Test_di_ung_thuoc.pdf')" class="text-slate-400 hover:text-primary ml-1 border-0 bg-transparent cursor-pointer p-0" title="Tải tệp"><span class="material-symbols-outlined text-[14px]">download</span></button>
-                                </span>
-                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-low text-on-surface font-label-sm text-xs border border-slate-200/50">
-                                    <span class="material-symbols-outlined text-primary text-[15px]">description</span>
-                                    Cong_thuc_mau.pdf (850 KB)
-                                    <button onclick="downloadAttachment('Cong_thuc_mau.pdf')" class="text-slate-400 hover:text-primary ml-1 border-0 bg-transparent cursor-pointer p-0" title="Tải tệp"><span class="material-symbols-outlined text-[14px]">download</span></button>
-                                </span>
-                            </div>
-                            <button onclick="showToast('Chi tiết bệnh án #UMP-2026-4401', 'Đã tải dữ liệu dị ứng và kết quả huyết học')" class="inline-flex items-center gap-1 font-label-md text-xs text-primary hover:text-primary-container font-semibold transition-colors border-0 bg-transparent cursor-pointer" type="button">
-                                <span>Xem chi tiết bệnh án</span>
-                                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
-                            </button>
-                        </div>
-                    </article>
-                </div>
-
-                <!-- ENCOUNTER CARD 3: Bệnh viện Nhi Đồng 1 / Nhi Trung Ương (Trần Bảo An) -->
-                <div class="relative encounter-item" data-member="an" data-type="routine" data-specialty="pediatric">
-                    <div class="timeline-node bg-tertiary ring-4 ring-tertiary-fixed shadow-sm">
-                        <span class="w-1.5 h-1.5 rounded-full bg-surface-container-lowest"></span>
-                    </div>
-
-                    <article class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-slate-200/80 record-card">
-                        <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-slate-100 mb-3">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span class="px-3 py-1 rounded-full bg-surface-container-high text-on-surface font-label-md text-xs font-semibold">
-                                    12/08/2026
-                                </span>
-                                <span class="font-title-md text-on-surface font-semibold text-xs sm:text-sm">
-                                    Bệnh viện Nhi Đồng 1 (Khoa Tiêm Chủng)
-                                </span>
-                                <span class="px-2 py-0.5 rounded-md bg-surface-container-low text-on-surface-variant font-label-sm text-[11px]">
-                                    Khám Nhi &amp; Tiêm Chủng Mở Rộng
-                                </span>
-                                <span class="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-[11px] font-semibold">
-                                    Bệnh nhi: Trần Bảo An (8t)
-                                </span>
-                            </div>
-                            <span class="font-label-sm text-outline font-mono">#CH1-2026-1934</span>
-                        </div>
-
-                        <p class="font-body-md text-on-surface-variant text-xs leading-relaxed mb-3 m-0">
-                            Khám sức khỏe tổng quát chuẩn bị năm học mới &amp; Tiêm chủng nhắc lại vắc-xin Cúm mùa thế hệ mới (Vaxigrip Tetra 0.5ml). Thể trạng phát triển tốt, chiều cao và cân nặng đạt chuẩn WHO.
-                        </p>
-
-                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-tertiary text-[18px]">vaccines</span>
-                                <span class="font-label-md text-xs text-on-surface font-medium">Đã cập nhật vào Sổ tiêm chủng điện tử quốc gia</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button onclick="downloadAttachment('Phieu_tiem_chung_Vaxigrip.pdf')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-label-md text-xs font-medium border-0 cursor-pointer inline-flex items-center gap-1" type="button">
-                                    <span class="material-symbols-outlined text-[14px]">download</span> Tải tệp đính kèm
-                                </button>
-                                <button onclick="showToast('Sổ tiêm chủng', 'Phiếu tiêm Vaxigrip Tetra 0.5ml hợp lệ')" class="inline-flex items-center gap-1 font-label-md text-xs text-primary hover:text-primary-container font-semibold transition-colors border-0 bg-transparent cursor-pointer" type="button">
-                                    <span>Xem phiếu tiêm</span>
-                                    <span class="material-symbols-outlined text-[16px]">chevron_right</span>
-                                </button>
-                            </div>
-                        </div>
-                    </article>
-                </div>
+                }
             </div>
         </div>
 
@@ -524,10 +344,12 @@
                         <span class="material-symbols-outlined text-primary text-[22px]">vital_signs</span>
                         <h2 class="font-title-md text-on-surface m-0 text-sm sm:text-base font-bold">Sinh Hiệu Lần Khám Gần Nhất</h2>
                     </div>
-                    <span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-[10px] font-bold">Ổn định</span>
+                    <span class="px-2 py-0.5 rounded-full @(Model?.LatestMetric?.IsAbnormal == true ? "bg-rose-100 text-rose-800" : "bg-tertiary-fixed text-on-tertiary-fixed") font-label-sm text-[10px] font-bold">
+                        @(Model?.LatestMetric != null ? (Model.LatestMetric.IsAbnormal ? "Cần lưu ý" : "Ổn định") : "Chưa có")
+                    </span>
                 </div>
                 <p class="font-label-sm text-outline mb-3 m-0">
-                    Bệnh nhân: <strong class="text-slate-800">Trần Quốc Khang</strong> • Ghi nhận 15/10/2026
+                    Bệnh nhân: <strong class="text-slate-800">@(Model?.LatestMetric?.Member?.FullName ?? "Chưa có dữ liệu")</strong> • Ghi nhận @(Model?.LatestMetric != null ? Model.LatestMetric.RecordedAt.ToString("dd/MM/yyyy") : "--/--/----")
                 </p>
 
                 <!-- 2x2 Metric Tiles Grid -->
@@ -536,12 +358,14 @@
                     <div class="p-3 rounded-lg bg-surface-container-low flex flex-col justify-between border border-slate-200/50">
                         <span class="font-label-sm text-[11px] text-on-surface-variant font-medium">Huyết áp (HA)</span>
                         <div class="my-1">
-                            <span class="font-metric-num text-xl text-on-surface font-bold">125/82</span>
+                            <span class="font-metric-num text-xl text-on-surface font-bold">
+                                @(Model?.LatestMetric?.SystolicBP != null && Model.LatestMetric?.DiastolicBP != null ? $"{Model.LatestMetric.SystolicBP}/{Model.LatestMetric.DiastolicBP}" : "--/--")
+                            </span>
                             <span class="font-label-sm text-[10px] text-outline ml-0.5">mmHg</span>
                         </div>
                         <div class="flex items-center gap-1 text-tertiary font-label-sm text-[10px] font-semibold">
                             <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-                            <span>Kiểm soát tối ưu</span>
+                            <span>@(Model?.LatestMetric?.SystolicBP != null ? "Gần nhất" : "Chưa có số đo")</span>
                         </div>
                     </div>
 
@@ -549,12 +373,14 @@
                     <div class="p-3 rounded-lg bg-surface-container-low flex flex-col justify-between border border-slate-200/50">
                         <span class="font-label-sm text-[11px] text-on-surface-variant font-medium">Nhịp tim</span>
                         <div class="my-1">
-                            <span class="font-metric-num text-xl text-on-surface font-bold">74</span>
+                            <span class="font-metric-num text-xl text-on-surface font-bold">
+                                @(Model?.LatestMetric?.HeartRate != null ? $"{Model.LatestMetric.HeartRate}" : "--")
+                            </span>
                             <span class="font-label-sm text-[10px] text-outline ml-0.5">bpm</span>
                         </div>
                         <div class="flex items-center gap-1 text-tertiary font-label-sm text-[10px] font-semibold">
                             <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-                            <span>Nhịp xoang đều</span>
+                            <span>@(Model?.LatestMetric?.HeartRate != null ? "Nhịp tim đo được" : "Chưa có số đo")</span>
                         </div>
                     </div>
 
@@ -562,25 +388,28 @@
                     <div class="p-3 rounded-lg bg-surface-container-low flex flex-col justify-between border border-slate-200/50">
                         <span class="font-label-sm text-[11px] text-on-surface-variant font-medium">Đường huyết đói</span>
                         <div class="my-1">
-                            <span class="font-metric-num text-xl text-secondary font-bold">6.2</span>
+                            <span class="font-metric-num text-xl text-secondary font-bold">
+                                @(Model?.LatestMetric?.BloodSugar != null ? $"{Model.LatestMetric.BloodSugar}" : "--")
+                            </span>
                             <span class="font-label-sm text-[10px] text-outline ml-0.5">mmol/L</span>
                         </div>
                         <div class="flex items-center gap-1 text-secondary font-label-sm text-[10px] font-semibold">
                             <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                            <span>HbA1c: 6.4%</span>
+                            <span>@(Model?.LatestMetric?.BloodSugar != null ? "Chỉ số đường huyết" : "Chưa có số đo")</span>
                         </div>
                     </div>
 
-                    <!-- BMI Tile -->
+                    <!-- BMI / SpO2 Tile -->
                     <div class="p-3 rounded-lg bg-surface-container-low flex flex-col justify-between border border-slate-200/50">
-                        <span class="font-label-sm text-[11px] text-on-surface-variant font-medium">Chỉ số BMI</span>
+                        <span class="font-label-sm text-[11px] text-on-surface-variant font-medium">SpO2 / Thân nhiệt</span>
                         <div class="my-1">
-                            <span class="font-metric-num text-xl text-on-surface font-bold">22.1</span>
-                            <span class="font-label-sm text-[10px] text-outline ml-0.5">kg/m²</span>
+                            <span class="font-metric-num text-xl text-on-surface font-bold">
+                                @(Model?.LatestMetric?.SpO2 != null ? $"{Model.LatestMetric.SpO2}%" : (Model?.LatestMetric?.BodyTemperature != null ? $"{Model.LatestMetric.BodyTemperature}°C" : "--"))
+                            </span>
                         </div>
                         <div class="flex items-center gap-1 text-tertiary font-label-sm text-[10px] font-semibold">
                             <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-                            <span>65.5 kg • Bình thường</span>
+                            <span>@(Model?.LatestMetric?.SpO2 != null ? "Nồng độ Oxy" : "Chỉ số sinh hiệu")</span>
                         </div>
                     </div>
                 </div>
@@ -589,7 +418,14 @@
                 <div class="p-3 rounded-lg bg-surface-container-high flex items-start gap-2.5">
                     <span class="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">clinical_notes</span>
                     <p class="font-body-sm text-xs text-on-surface leading-snug m-0">
-                        <strong>Lời dặn bác sĩ:</strong> Tiếp tục chế độ ăn giảm muối &lt; 5g/ngày, tập thể dục nhẹ nhàng 30 phút mỗi ngày. Tái khám ngay khi huyết áp tâm thu vượt 140 mmHg.
+                        @if (!string.IsNullOrWhiteSpace(Model?.LatestRecord?.Conclusion ?? Model?.LatestRecord?.Notes))
+                        {
+                            <strong>Lời dặn bác sĩ:</strong> @(Model.LatestRecord.Conclusion ?? Model.LatestRecord.Notes)
+                        }
+                        else
+                        {
+                            <span class="text-slate-500 italic">Chưa có ghi chú hoặc lời dặn dò y tế gần đây.</span>
+                        }
                     </p>
                 </div>
             </section>
@@ -611,28 +447,28 @@
 
                 <!-- Category Counts Rows -->
                 <div class="space-y-2 mb-4">
-                    <div onclick="showToast('Xét nghiệm máu', 'Hiển thị 6 kết quả sinh hóa gần nhất')" class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low vault-category-row cursor-pointer border border-slate-200/50">
+                    <div onclick="showToast('Xét nghiệm & Chẩn đoán', 'Hiển thị @(Model?.MedicalRecords?.Count ?? 0) hồ sơ khám')" class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low vault-category-row cursor-pointer border border-slate-200/50">
                         <div class="flex items-center gap-2.5">
                             <span class="material-symbols-outlined text-error text-[18px]">bloodtype</span>
-                            <span class="font-label-md text-xs text-on-surface font-medium">Xét nghiệm máu &amp; Sinh hóa</span>
+                            <span class="font-label-md text-xs text-on-surface font-medium">Hồ sơ khám &amp; Xét nghiệm</span>
                         </div>
-                        <span class="font-label-sm text-xs text-on-surface-variant font-bold">6 tệp PDF</span>
+                        <span class="font-label-sm text-xs text-on-surface-variant font-bold">@(Model?.MedicalRecords?.Count ?? 0) hồ sơ</span>
                     </div>
 
-                    <div onclick="showToast('Chẩn đoán hình ảnh', 'Hiển thị 4 tệp phim DICOM/X-Ray')" class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low vault-category-row cursor-pointer border border-slate-200/50">
+                    <div onclick="showToast('Tệp đính kèm', 'Hiển thị @(Model?.TotalAttachments ?? 0) tệp tài liệu y khoa')" class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low vault-category-row cursor-pointer border border-slate-200/50">
                         <div class="flex items-center gap-2.5">
                             <span class="material-symbols-outlined text-primary text-[18px]">radiology</span>
-                            <span class="font-label-md text-xs text-on-surface font-medium">Chẩn đoán hình ảnh CT / X-Ray</span>
+                            <span class="font-label-md text-xs text-on-surface font-medium">Tệp hình ảnh &amp; Tài liệu</span>
                         </div>
-                        <span class="font-label-sm text-xs text-on-surface-variant font-bold">4 tệp PACS</span>
+                        <span class="font-label-sm text-xs text-on-surface-variant font-bold">@(Model?.TotalAttachments ?? 0) tệp</span>
                     </div>
 
-                    <div onclick="showToast('Toa thuốc điện tử', 'Hiển thị 8 đơn thuốc số liên thông viện')" class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low vault-category-row cursor-pointer border border-slate-200/50">
+                    <div onclick="showToast('Toa thuốc điện tử', 'Hiển thị @(Model?.TotalPrescriptions ?? 0) đơn thuốc liên thông')" class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low vault-category-row cursor-pointer border border-slate-200/50">
                         <div class="flex items-center gap-2.5">
                             <span class="material-symbols-outlined text-secondary text-[18px]">receipt_long</span>
                             <span class="font-label-md text-xs text-on-surface font-medium">Toa thuốc điện tử đã cấp</span>
                         </div>
-                        <span class="font-label-sm text-xs text-on-surface-variant font-bold">8 toa thuốc</span>
+                        <span class="font-label-sm text-xs text-on-surface-variant font-bold">@(Model?.TotalPrescriptions ?? 0) toa thuốc</span>
                     </div>
                 </div>
 
@@ -650,38 +486,57 @@
                         <span class="material-symbols-outlined text-primary text-[22px]">event_upcoming</span>
                         <h2 class="font-title-md text-on-surface m-0 text-sm sm:text-base font-bold">Lịch Hẹn Tái Khám Tới</h2>
                     </div>
-                    <span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-[10px] font-bold">
-                        Còn 92 ngày
-                    </span>
+                    @if (Model?.NextAppointment != null)
+                    {
+                        var daysLeft = Math.Max(0, (Model.NextAppointment.AppointmentDateTime.Date - DateTime.Today).Days);
+                        <span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-[10px] font-bold">
+                            @(daysLeft == 0 ? "Hôm nay" : $"Còn {daysLeft} ngày")
+                        </span>
+                    }
                 </div>
 
-                <div class="p-3.5 rounded-xl bg-surface-container-low space-y-2.5 mb-3.5 border border-slate-200/50">
-                    <div class="flex items-start gap-2.5">
-                        <div class="w-8 h-8 rounded-lg bg-primary-fixed flex items-center justify-center text-primary shrink-0 mt-0.5 font-bold">
-                            <span class="material-symbols-outlined text-[18px]">alarm</span>
+                @if (Model?.NextAppointment != null)
+                {
+                    <div class="p-3.5 rounded-xl bg-surface-container-low space-y-2.5 mb-3.5 border border-slate-200/50">
+                        <div class="flex items-start gap-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-primary-fixed flex items-center justify-center text-primary shrink-0 mt-0.5 font-bold">
+                                <span class="material-symbols-outlined text-[18px]">alarm</span>
+                            </div>
+                            <div>
+                                <p class="font-title-md text-xs sm:text-sm text-on-surface font-bold m-0">@(Model.NextAppointment.DoctorName ?? Model.NextAppointment.Title ?? "Khám định kỳ")</p>
+                                <p class="font-body-sm text-[11px] text-on-surface-variant m-0">@(Model.NextAppointment.Member?.FullName ?? "Thành viên gia đình")</p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="font-title-md text-xs sm:text-sm text-on-surface font-bold m-0">Tái khám Tim mạch &amp; ĐTĐ</p>
-                            <p class="font-body-sm text-[11px] text-on-surface-variant m-0">Kiểm tra định kỳ 3 tháng &amp; xét nghiệm HbA1c</p>
+
+                        <div class="space-y-1.5 pt-2 border-t border-slate-200/50">
+                            <div class="flex items-center gap-2 text-on-surface font-body-sm text-xs">
+                                <span class="material-symbols-outlined text-outline text-[16px]">schedule</span>
+                                <span><strong>@Model.NextAppointment.AppointmentDateTime.ToString("dd/MM/yyyy")</strong> • @Model.NextAppointment.AppointmentDateTime.ToString("HH:mm")</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-on-surface font-body-sm text-xs">
+                                <span class="material-symbols-outlined text-outline text-[16px]">location_on</span>
+                                <span class="truncate">@Model.NextAppointment.Location</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="space-y-1.5 pt-2 border-t border-slate-200/50">
-                        <div class="flex items-center gap-2 text-on-surface font-body-sm text-xs">
-                            <span class="material-symbols-outlined text-outline text-[16px]">schedule</span>
-                            <span><strong>15/01/2027</strong> • 08:30 Sáng (Thứ Sáu)</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-on-surface font-body-sm text-xs">
-                            <span class="material-symbols-outlined text-outline text-[16px]">location_on</span>
-                            <span class="truncate">BV Bạch Mai / BV ĐKQT Vinmec • Tầng 3</span>
-                        </div>
+                    <button onclick="showToast('Nhắc nhở thông minh', 'Đã kích hoạt gửi tin nhắn SMS & thông báo đẩy trước 3 ngày')" class="w-full h-10 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-md text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 border-0 cursor-pointer" type="button">
+                        <span class="material-symbols-outlined text-[18px]">notifications_active</span>
+                        <span>Bật nhắc nhở thông minh</span>
+                    </button>
+                }
+                else
+                {
+                    <div class="py-6 px-3 rounded-xl bg-surface-container-low text-center border border-dashed border-slate-200 mb-3.5">
+                        <span class="material-symbols-outlined text-slate-300 text-[32px] mb-1">calendar_month</span>
+                        <p class="font-title-md text-slate-700 text-xs font-bold mb-1">Chưa có lịch hẹn tái khám</p>
+                        <p class="font-body-sm text-slate-400 text-[11px] mb-3">Tổ ấm hiện chưa ghi nhận lịch tái khám sắp tới.</p>
+                        <a asp-controller="Appointments" asp-action="Index" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold text-decoration-none shadow-xs hover:bg-primary-container transition-colors">
+                            <span class="material-symbols-outlined text-[15px]">add</span>
+                            <span>Đặt lịch tái khám</span>
+                        </a>
                     </div>
-                </div>
-
-                <button onclick="showToast('Nhắc nhở thông minh', 'Đã kích hoạt gửi tin nhắn SMS & thông báo đẩy trước 3 ngày')" class="w-full h-10 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-md text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 border-0 cursor-pointer" type="button">
-                    <span class="material-symbols-outlined text-[18px]">notifications_active</span>
-                    <span>Bật nhắc nhở thông minh</span>
-                </button>
+                }
             </section>
         </div>
     </div>
@@ -815,15 +670,6 @@
             card.classList.remove('scale-100');
         }
 
-        // Cấu hình Avatar cho thành viên
-        var avatarMap = {
-            'all': '<span class="material-symbols-outlined text-[13px] leading-none">groups</span>',
-            'khang': 'K',
-            'dat': 'Đ',
-            'ha': 'H',
-            'an': 'A'
-        };
-
         var currentSpecialty = 'all';
 
         // Bộ lọc kết hợp đa tiêu chí (Thành viên + Thời gian + Loại hồ sơ + Chuyên khoa)
@@ -857,7 +703,13 @@
             var selectedMember = this.value;
             var badge = document.getElementById('patientAvatarBadge');
             if (badge) {
-                badge.innerHTML = avatarMap[selectedMember] || 'K';
+                if (selectedMember === 'all') {
+                    badge.innerHTML = '<span class="material-symbols-outlined text-[13px] leading-none">groups</span>';
+                } else {
+                    var selectedText = this.options[this.selectedIndex]?.text || '';
+                    var letter = selectedText.trim() ? selectedText.trim()[0].toUpperCase() : 'T';
+                    badge.textContent = letter;
+                }
             }
             applyCombinedFilters();
             showToast("Đã lọc bệnh án", "Hiển thị đợt khám của thành viên đã chọn", false);

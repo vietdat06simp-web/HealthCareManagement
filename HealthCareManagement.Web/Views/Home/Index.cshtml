@@ -1,3 +1,4 @@
+@model HealthCareManagement.Web.Models.ViewModels.HomeDashboardViewModel
 @{
     ViewData["Title"] = "Trang Chủ - Bảng Điều Khiển Sức Khỏe";
 }
@@ -83,7 +84,7 @@
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
             </span>
-            <span class="font-medium">Đồng bộ thời gian thực: <strong class="font-bold text-slate-900">4/4 thành viên an toàn</strong></span>
+            <span class="font-medium">Đồng bộ thời gian thực: <strong class="font-bold text-slate-900">@(Model?.SafeMembersCount ?? 0)/@(Model?.TotalMembers ?? 0) thành viên an toàn</strong></span>
         </div>
     </div>
 
@@ -97,13 +98,13 @@
             <div class="space-y-3 max-w-2xl">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-cyan-200 text-xs font-semibold border border-white/15">
                     <span class="material-symbols-outlined text-[16px]">home_health</span>
-                    <span>Tổ ấm: Gia đình Trần Viết Đạt • Mã số HGĐ: #FH-88392</span>
+                    <span>Tổ ấm: @(Model?.FamilyGroupName ?? "Gia đình") • Mã số HGĐ: #@(Model?.InviteCode ?? "CHƯA TẠO")</span>
                 </div>
                 <h1 class="font-headline-lg text-white text-2xl md:text-3xl font-bold tracking-tight m-0">
-                    Xin chào, Gia đình Trần Viết Đạt! 👋
+                    Xin chào, @(Model?.FamilyGroupName ?? "Tổ ấm gia đình")! 👋
                 </h1>
                 <p class="font-body-md text-sky-100 text-sm md:text-base m-0 leading-relaxed">
-                    Hôm nay Thứ Năm, 15/10/2026. Tất cả 4 thành viên đều có chỉ số sinh hiệu trong ngưỡng an toàn. Bạn có <strong class="text-white underline decoration-cyan-400">3 cữ thuốc cần uống</strong> và <strong class="text-white underline decoration-amber-400">1 lịch tái khám chiều nay</strong>.
+                    Hôm nay @DateTime.Now.ToString("dddd, dd/MM/yyyy", new System.Globalization.CultureInfo("vi-VN")). Có @(Model?.TotalMembers ?? 0) thành viên trong tổ ấm. Bạn có <strong class="text-white underline decoration-cyan-400">@(Model?.TodayDosesPending ?? 0) cữ thuốc cần uống</strong> và <strong class="text-white underline decoration-amber-400">@(Model?.UpcomingAppointmentsCount ?? 0) lịch tái khám sắp tới</strong>.
                 </p>
             </div>
 
@@ -130,17 +131,17 @@
                     <span class="material-symbols-outlined text-[26px]">medication</span>
                 </div>
                 <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-label-sm font-bold text-xs">
-                    Còn 3 cữ
+                    Còn @(Model?.TodayDosesPending ?? 0) cữ
                 </span>
             </div>
             <div>
                 <span class="font-label-sm text-slate-500 uppercase tracking-wider block font-semibold text-xs">Uống thuốc hôm nay</span>
-                <div class="font-metric-num text-slate-900 text-2xl font-bold mt-1">Đã uống 3/6</div>
+                <div class="font-metric-num text-slate-900 text-2xl font-bold mt-1">Đã uống @(Model?.TodayDosesTaken ?? 0)/@(Model?.TodayDosesTotal ?? 0)</div>
                 <div class="w-full bg-slate-100 h-2 rounded-full mt-2.5 overflow-hidden">
-                    <div class="bg-gradient-to-r from-sky-500 to-cyan-500 h-full rounded-full" style="width: 50%;"></div>
+                    <div class="bg-gradient-to-r from-sky-500 to-cyan-500 h-full rounded-full" style="width: @(Model?.DoseProgressPercent ?? 0)%;"></div>
                 </div>
                 <p class="font-body-sm text-slate-500 text-xs mt-2 m-0 flex items-center justify-between">
-                    <span>Tiến độ ngày: 50%</span>
+                    <span>Tiến độ ngày: @(Model?.DoseProgressPercent ?? 0)%</span>
                     <span class="text-primary font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center">
                         Chi tiết <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
                     </span>
@@ -149,23 +150,25 @@
         </a>
 
         <!-- Widget 2: Lịch Tái Khám Sắp Tới -->
-        <a asp-controller="Appointments" asp-action="Index" class="dashboard-stat-card bg-white p-5 rounded-2xl flex flex-col justify-between text-decoration-none group cursor-pointer">
+        <a asp-controller="Prescriptions" asp-action="Index" asp-route-tab="appointments" class="dashboard-stat-card bg-white p-5 rounded-2xl flex flex-col justify-between text-decoration-none group cursor-pointer">
             <div class="flex items-center justify-between mb-3">
                 <div class="w-12 h-12 rounded-xl bg-cyan-100 text-secondary flex items-center justify-center group-hover:scale-105 transition-transform">
                     <span class="material-symbols-outlined text-[26px]">calendar_month</span>
                 </div>
                 <span class="px-2.5 py-0.5 rounded-full bg-cyan-100 text-cyan-800 font-label-sm font-bold text-xs">
-                    Sắp tới: 20/10
+                    @(Model?.UpcomingAppointmentsCount > 0 ? $"{Model.UpcomingAppointmentsCount} lịch hẹn" : "Chưa có hẹn")
                 </span>
             </div>
             <div>
                 <span class="font-label-sm text-slate-500 uppercase tracking-wider block font-semibold text-xs">Lịch tái khám gần nhất</span>
-                <div class="font-metric-num text-slate-900 text-2xl font-bold mt-1">Còn 5 ngày</div>
+                <div class="font-metric-num text-slate-900 text-2xl font-bold mt-1">
+                    @(Model?.DaysUntilNextAppointment != null ? $"Còn {Model.DaysUntilNextAppointment} ngày" : "Không có hẹn")
+                </div>
                 <p class="font-body-sm text-slate-700 text-xs mt-1.5 m-0 font-medium truncate">
-                    BV Vinmec • BS. Tuấn (Tim Mạch)
+                    @(Model?.NextAppointmentSummary ?? "Chưa có lịch hẹn tái khám")
                 </p>
                 <p class="font-body-sm text-slate-500 text-xs mt-2.5 m-0 flex items-center justify-between">
-                    <span>Bệnh nhân: Ông Khang</span>
+                    <span>Bệnh nhân: @(Model?.NextAppointmentMember ?? "Chưa có")</span>
                     <span class="text-secondary font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center">
                         Xem lịch <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
                     </span>
@@ -179,18 +182,20 @@
                 <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition-transform">
                     <span class="material-symbols-outlined text-[26px]">vital_signs</span>
                 </div>
-                <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-label-sm font-bold text-xs flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Ổn định
+                <span class="px-2.5 py-0.5 rounded-full @(Model?.HasAbnormalVitals == true ? "bg-rose-100 text-rose-800" : "bg-emerald-100 text-emerald-800") font-label-sm font-bold text-xs flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full @(Model?.HasAbnormalVitals == true ? "bg-rose-600" : "bg-emerald-600")"></span> @(Model?.HasAbnormalVitals == true ? "Cần lưu ý" : "Ổn định")
                 </span>
             </div>
             <div>
                 <span class="font-label-sm text-slate-500 uppercase tracking-wider block font-semibold text-xs">Sinh hiệu gia đình</span>
-                <div class="font-metric-num text-slate-900 text-2xl font-bold mt-1">122/80 <span class="text-sm font-normal text-slate-500">mmHg</span></div>
+                <div class="font-metric-num text-slate-900 text-2xl font-bold mt-1">
+                    @(Model?.LatestBloodPressure ?? "--/--") <span class="text-sm font-normal text-slate-500">mmHg</span>
+                </div>
                 <p class="font-body-sm text-slate-700 text-xs mt-1.5 m-0 font-medium">
-                    Huyết áp Ông Khang • Nhịp tim 74 bpm
+                    @(Model?.LatestVitalsMember != null ? $"{Model.LatestVitalsMember} • Nhịp tim {Model.LatestHeartRate ?? 0} bpm" : "Chưa có dữ liệu sinh hiệu")
                 </p>
                 <p class="font-body-sm text-slate-500 text-xs mt-2.5 m-0 flex items-center justify-between">
-                    <span>SpO2: 98% (Tốt)</span>
+                    <span>SpO2: @(Model?.LatestSpO2 != null ? $"{Model.LatestSpO2}%" : "--")</span>
                     <span class="text-emerald-700 font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center">
                         Chi tiết <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
                     </span>
@@ -210,12 +215,12 @@
             </div>
             <div>
                 <span class="font-label-sm text-slate-500 uppercase tracking-wider block font-semibold text-xs">Hồ sơ y tế điện tử</span>
-                <div class="font-metric-num text-slate-900 text-2xl font-bold mt-1">12 Bệnh án</div>
+                <div class="font-metric-num text-slate-900 text-2xl font-bold mt-1">@(Model?.TotalMedicalRecords ?? 0) Bệnh án</div>
                 <p class="font-body-sm text-slate-700 text-xs mt-1.5 m-0 font-medium">
-                    24 cận lâm sàng • 100% số hóa
+                    @(Model?.TotalAttachments ?? 0) cận lâm sàng • 100% số hóa
                 </p>
                 <p class="font-body-sm text-slate-500 text-xs mt-2.5 m-0 flex items-center justify-between">
-                    <span>Mới cập nhật: Vinmec</span>
+                    <span>Mới cập nhật: @(Model?.LatestHospital ?? "Chưa có bản ghi")</span>
                     <span class="text-indigo-700 font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center">
                         Mở kho <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
                     </span>
@@ -360,10 +365,22 @@
                             </div>
                             <!-- Family Avatar Chips -->
                             <div class="flex items-center -space-x-2">
-                                <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shadow-xs border-2 border-white" title="Trần Viết Đạt (Chủ hộ)">Đ</div>
-                                <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-xs border-2 border-white" title="Lê Thu Hà (Mẹ)">H</div>
-                                <div class="w-8 h-8 rounded-full bg-cyan-600 flex items-center justify-center text-white font-bold text-xs shadow-xs border-2 border-white" title="Trần Quốc Khang (Ông)">K</div>
-                                <div class="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center text-white font-bold text-xs shadow-xs border-2 border-white" title="Trần Bảo An (Con)">A</div>
+                                @if (Model?.Members != null && Model.Members.Any())
+                                {
+                                    var colors = new[] { "bg-primary", "bg-purple-600", "bg-cyan-600", "bg-teal-600" };
+                                    var idx = 0;
+                                    foreach (var m in Model.Members.Take(4))
+                                    {
+                                        var letter = !string.IsNullOrWhiteSpace(m.FullName) ? m.FullName.Trim().Substring(0, 1).ToUpper() : "T";
+                                        var colorClass = colors[idx % colors.Length];
+                                        <div class="w-8 h-8 rounded-full @colorClass flex items-center justify-center text-white font-bold text-xs shadow-xs border-2 border-white" title="@m.FullName (@m.Relationship)">@letter</div>
+                                        idx++;
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="text-xs text-slate-400 italic">Chưa có thành viên</div>
+                                }
                             </div>
                         </div>
                         <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5 font-body-sm text-slate-600 text-xs list-none p-0">
@@ -529,61 +546,80 @@
                 </div>
 
                 <div class="space-y-3">
-                    <!-- Activity 1 -->
-                    <div class="activity-item p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-3">
-                        <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                            <span class="material-symbols-outlined text-[16px]">done_all</span>
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <div class="flex items-center justify-between gap-1">
-                                <span class="font-title-md text-slate-900 text-xs font-bold truncate">Đã uống Amoxicillin 500mg</span>
-                                <span class="font-label-sm text-slate-400 text-[11px] shrink-0">08:15</span>
+                    @if (Model.TodayDosesTotal > 0 || Model.UpcomingAppointmentsCount > 0 || !string.IsNullOrEmpty(Model.LatestBloodPressure) || Model.TotalMedicalRecords > 0)
+                    {
+                        @if (Model.TodayDosesTotal > 0)
+                        {
+                            <div class="activity-item p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                                    <span class="material-symbols-outlined text-[16px]">done_all</span>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <span class="font-title-md text-slate-900 text-xs font-bold truncate">Tiến độ uống thuốc hôm nay</span>
+                                        <span class="font-label-sm text-emerald-700 text-[11px] font-semibold shrink-0">@Model.TodayDosesTaken/@Model.TodayDosesTotal liều</span>
+                                    </div>
+                                    <p class="font-body-sm text-slate-500 text-[11px] m-0">Đã uống @Model.DoseProgressPercent% các cữ thuốc trong ngày</p>
+                                </div>
                             </div>
-                            <p class="font-body-sm text-slate-500 text-[11px] m-0">Trần Viết Đạt • Đơn thuốc sau ăn sáng</p>
-                        </div>
-                    </div>
+                        }
 
-                    <!-- Activity 2 -->
-                    <div class="activity-item p-3 rounded-xl bg-sky-50/60 border border-sky-100 flex items-start gap-3">
-                        <div class="w-8 h-8 rounded-full bg-sky-100 text-primary flex items-center justify-center shrink-0 mt-0.5">
-                            <span class="material-symbols-outlined text-[16px]">monitor_heart</span>
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <div class="flex items-center justify-between gap-1">
-                                <span class="font-title-md text-slate-900 text-xs font-bold truncate">Đo huyết áp: 122/80 mmHg</span>
-                                <span class="font-label-sm text-slate-400 text-[11px] shrink-0">07:45</span>
+                        @if (Model.UpcomingAppointmentsCount > 0 && !string.IsNullOrEmpty(Model.NextAppointmentSummary))
+                        {
+                            <div class="activity-item p-3 rounded-xl bg-amber-50/70 border border-amber-100 flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                                    <span class="material-symbols-outlined text-[16px]">calendar_today</span>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <span class="font-title-md text-slate-900 text-xs font-bold truncate">@Model.NextAppointmentSummary</span>
+                                        <span class="font-label-sm text-amber-800 text-[11px] font-semibold shrink-0">@(Model.DaysUntilNextAppointment == 0 ? "Hôm nay" : $"Còn {Model.DaysUntilNextAppointment} ngày")</span>
+                                    </div>
+                                    <p class="font-body-sm text-slate-600 text-[11px] m-0">@(Model.NextAppointmentMember ?? "Thành viên gia đình")</p>
+                                </div>
                             </div>
-                            <p class="font-body-sm text-slate-500 text-[11px] m-0">Ông Khang • Chỉ số hoàn hảo</p>
-                        </div>
-                    </div>
+                        }
 
-                    <!-- Activity 3 -->
-                    <div class="activity-item p-3 rounded-xl bg-amber-50/70 border border-amber-100 flex items-start gap-3">
-                        <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
-                            <span class="material-symbols-outlined text-[16px]">calendar_today</span>
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <div class="flex items-center justify-between gap-1">
-                                <span class="font-title-md text-slate-900 text-xs font-bold truncate">Tái khám BV Vinmec</span>
-                                <span class="font-label-sm text-amber-800 text-[11px] font-semibold shrink-0">14:30</span>
+                        @if (!string.IsNullOrEmpty(Model.LatestBloodPressure))
+                        {
+                            <div class="activity-item p-3 rounded-xl bg-sky-50/60 border border-sky-100 flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-full bg-sky-100 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                                    <span class="material-symbols-outlined text-[16px]">monitor_heart</span>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <span class="font-title-md text-slate-900 text-xs font-bold truncate">Huyết áp gần nhất: @Model.LatestBloodPressure mmHg</span>
+                                        <span class="font-label-sm text-slate-400 text-[11px] shrink-0">Vừa đo</span>
+                                    </div>
+                                    <p class="font-body-sm text-slate-500 text-[11px] m-0">@(Model.LatestVitalsMember ?? "Thành viên") • @(Model.HasAbnormalVitals ? "Cần chú ý theo dõi" : "Chỉ số ổn định")</p>
+                                </div>
                             </div>
-                            <p class="font-body-sm text-slate-600 text-[11px] m-0">BS. Nguyễn Văn Tuấn • Còn 2 tiếng</p>
-                        </div>
-                    </div>
+                        }
 
-                    <!-- Activity 4 -->
-                    <div class="activity-item p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-3">
-                        <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 mt-0.5">
-                            <span class="material-symbols-outlined text-[16px]">biotech</span>
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <div class="flex items-center justify-between gap-1">
-                                <span class="font-title-md text-slate-900 text-xs font-bold truncate">Kết quả xét nghiệm mỡ máu</span>
-                                <span class="font-label-sm text-slate-400 text-[11px] shrink-0">Hôm qua</span>
+                        @if (Model.TotalMedicalRecords > 0)
+                        {
+                            <div class="activity-item p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 mt-0.5">
+                                    <span class="material-symbols-outlined text-[16px]">biotech</span>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <span class="font-title-md text-slate-900 text-xs font-bold truncate">Hồ sơ y bạ lưu trữ</span>
+                                        <span class="font-label-sm text-slate-400 text-[11px] shrink-0">@Model.TotalMedicalRecords hồ sơ</span>
+                                    </div>
+                                    <p class="font-body-sm text-slate-500 text-[11px] m-0">@(Model.LatestHospital ?? "Đồng bộ từ cơ sở y tế") • @Model.TotalAttachments tệp đính kèm</p>
+                                </div>
                             </div>
-                            <p class="font-body-sm text-slate-500 text-[11px] m-0">Lê Thu Hà • Bác sĩ đánh giá tốt</p>
+                        }
+                    }
+                    else
+                    {
+                        <div class="py-8 px-4 text-center rounded-xl bg-slate-50 border border-dashed border-slate-200">
+                            <span class="material-symbols-outlined text-slate-300 text-[36px] mb-1">event_busy</span>
+                            <p class="font-title-md text-slate-700 text-xs font-bold mb-1">Chưa có hoạt động y tế nào</p>
+                            <p class="font-body-sm text-slate-400 text-[11px] mb-0">Khi bạn thêm đơn thuốc, đo chỉ số sinh hiệu hoặc đặt lịch khám, lịch trình sẽ hiển thị tại đây.</p>
                         </div>
-                    </div>
+                    }
                 </div>
             </div>
 
@@ -645,10 +681,18 @@
             <div>
                 <label class="block font-label-sm text-slate-700 font-semibold mb-1">Thành viên đo *</label>
                 <select id="vitalMemberSelect" required class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary text-sm outline-none bg-white">
-                    <option value="Trần Quốc Khang">Trần Quốc Khang (Ông nội - 72 tuổi)</option>
-                    <option value="Trần Viết Đạt">Trần Viết Đạt (Chủ hộ - 40 tuổi)</option>
-                    <option value="Lê Thu Hà">Lê Thu Hà (Mẹ - 38 tuổi)</option>
-                    <option value="Trần Bảo An">Trần Bảo An (Con trai - 4 tuổi)</option>
+                    @if (Model?.Members != null && Model.Members.Any())
+                    {
+                        foreach (var m in Model.Members)
+                        {
+                            var age = DateTime.Today.Year - m.DateOfBirth.Year;
+                            <option value="@m.FullName">@m.FullName (@m.Relationship - @(age)t)</option>
+                        }
+                    }
+                    else
+                    {
+                        <option value="">Chưa có thành viên nào</option>
+                    }
                 </select>
             </div>
 
@@ -735,9 +779,12 @@
 
             <!-- Thông tin địa chỉ cấp cứu -->
             <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600">
-                <div class="font-semibold text-slate-800 mb-0.5">Địa chỉ lưu trú đã xác thực của gia đình:</div>
-                <div>Villa 12, Khu đô thị Vinhomes Central Park, P. 22, Bình Thạnh, TP.HCM</div>
-                <div class="mt-1 text-slate-500">Bệnh viện đa khoa gần nhất: <strong>BV ĐKQT Vinmec (Cách 350m - 2 phút)</strong></div>
+                <div class="font-semibold text-slate-800 mb-0.5">Địa chỉ lưu trú của gia đình:</div>
+                <div class="font-medium text-slate-700">@(string.IsNullOrWhiteSpace(Model.Address) ? "Chưa thiết lập địa chỉ gia đình (Cập nhật tại Cài đặt tổ ấm)" : Model.Address)</div>
+                @if (!string.IsNullOrWhiteSpace(Model.EmergencyPhone))
+                {
+                    <div class="mt-1 text-slate-500">Số liên hệ khẩn cấp: <strong class="text-slate-800">@Model.EmergencyPhone</strong></div>
+                }
             </div>
 
             <div class="pt-2 text-center">

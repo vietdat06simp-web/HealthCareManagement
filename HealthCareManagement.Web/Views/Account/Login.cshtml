@@ -114,6 +114,7 @@
                 <form asp-controller="Account" asp-action="Login" method="post" class="auth-form">
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="ReturnUrl" />
+                    <div asp-validation-summary="ModelOnly" class="field-validation-error mb-3" style="color: #EF4444; font-size: 0.875rem; font-weight: 600;"></div>
 
                     <!-- Field 1: Email / Phone -->
                     <div class="input-group">

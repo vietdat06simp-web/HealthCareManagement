@@ -2,15 +2,17 @@ namespace HealthCareManagement.Web.Models.ViewModels;
 
 public class FamilyGroupViewModel
 {
-    public int Id { get; set; } = 1;
+    public int Id { get; set; }
 
-    public string GroupName { get; set; } = "Tổ ấm Đại gia đình Họ Trần";
+    public string GroupName { get; set; } = string.Empty;
 
-    public string? Address { get; set; } = "Số 45, Đường Lê Duẩn, P. Bến Nghé, Quận 1, TP. HCM";
+    public string? Address { get; set; }
 
-    public string? EmergencyPhone { get; set; } = "0912 345 678";
+    public string? EmergencyPhone { get; set; }
 
-    public string? GroupCode { get; set; } = "#FHH-7729-HCM";
+    public string? GroupCode { get; set; }
+
+    public string? InviteCode { get; set; }
 
     public List<FamilyMemberItemViewModel> Members { get; set; } = new();
 }

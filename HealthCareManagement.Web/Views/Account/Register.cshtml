@@ -112,6 +112,7 @@
                 <!-- Registration Form -->
                 <form asp-controller="Account" asp-action="Register" method="post" class="auth-form">
                     @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="field-validation-error mb-3" style="color: #EF4444; font-size: 0.875rem; font-weight: 600;"></div>
 
                     <!-- Field 1: Họ và tên -->
                     <div class="input-group">

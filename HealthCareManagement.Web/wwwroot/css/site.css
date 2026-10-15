@@ -307,28 +307,40 @@ input:focus-visible {
   border-radius: 50%;
 }
 
-/* Profile Chip */
+/* User Profile Dropdown & Chip */
+.user-dropdown {
+  position: relative;
+}
+
 .user-profile-chip {
   display: flex !important;
   align-items: center;
   gap: 0.5rem;
   padding: 0.25rem 0.75rem 0.25rem 0.35rem;
   background-color: var(--card-white);
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border-light) !important;
   border-radius: var(--radius-full);
   cursor: pointer;
   transition: var(--transition-fast);
   box-shadow: var(--shadow-sm);
+  outline: none;
 }
 
-.user-profile-chip:hover {
+.user-profile-chip.dropdown-toggle::after {
+  display: none !important;
+}
+
+.user-profile-chip:hover,
+.user-profile-chip:focus,
+.user-dropdown.show .user-profile-chip {
   background-color: var(--bg-slate);
-  border-color: #CBD5E1;
+  border-color: #CBD5E1 !important;
+  box-shadow: var(--shadow-md);
 }
 
 .user-avatar-circle {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--primary-blue), var(--primary-cyan));
   color: #FFFFFF;
@@ -338,13 +350,110 @@ input:focus-visible {
   font-size: 0.8125rem;
   font-weight: 700;
   flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);
 }
 
 .user-display-name {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-dark);
-  max-width: 175px;
+  max-width: 150px;
+}
+
+.user-role-badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  background-color: rgba(2, 132, 199, 0.1);
+  color: var(--primary-blue);
+  border-radius: var(--radius-full);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.user-dropdown-caret {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
+}
+
+.user-dropdown.show .user-dropdown-caret,
+.user-dropdown:hover .user-dropdown-caret {
+  transform: rotate(180deg);
+  color: var(--primary-blue);
+}
+
+/* Dropdown Menu Popup */
+.user-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 220px;
+  background-color: var(--card-white);
+  border: 1px solid var(--border-light) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1) !important;
+  padding: 0.5rem 0.4rem;
+  margin-top: 0.5rem !important;
+  z-index: 1080 !important;
+  transform-origin: top right;
+  animation: userDropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Invisible hover bridge between button and dropdown */
+.user-dropdown-menu::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 0;
+  right: 0;
+  height: 8px;
+}
+
+@keyframes userDropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Desktop Hover support */
+@media (min-width: 992px) {
+  .user-dropdown:hover > .user-dropdown-menu {
+    display: block;
+  }
+}
+
+.user-dropdown-menu .dropdown-header {
+  padding: 0.5rem 0.75rem;
+  background-color: #F1F5F9;
+  border-radius: 8px;
+  margin-bottom: 0.35rem;
+}
+
+.user-dropdown-menu .dropdown-item {
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  transition: var(--transition-fast);
+}
+
+.user-dropdown-menu .dropdown-item:hover {
+  background-color: rgba(2, 132, 199, 0.08);
+  color: var(--primary-blue) !important;
+}
+
+.user-dropdown-menu .dropdown-item.user-logout-btn {
+  color: #DC2626 !important;
+}
+
+.user-dropdown-menu .dropdown-item.user-logout-btn:hover {
+  background-color: rgba(239, 68, 68, 0.08) !important;
+  color: #B91C1C !important;
 }
 
 /* ==========================================================================
