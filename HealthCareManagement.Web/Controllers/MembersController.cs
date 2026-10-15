@@ -31,6 +31,37 @@ public class MembersController : Controller
 
         var familyGroup = await _context.FamilyGroups.FindAsync(familyGroupId.Value);
 
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId.HasValue)
+        {
+            var currentUser = await _context.Users.FindAsync(currentUserId.Value);
+            if (currentUser != null)
+            {
+                bool ownerExists = await _context.Members.AnyAsync(m =>
+                    m.FamilyGroupId == familyGroupId.Value &&
+                    ((m.UserId.HasValue && m.UserId.Value == currentUser.Id) ||
+                     (!string.IsNullOrWhiteSpace(m.FullName) && m.FullName.Trim() == currentUser.FullName.Trim()))
+                );
+
+                if (!ownerExists)
+                {
+                    var ownerMember = new Member
+                    {
+                        FamilyGroupId = familyGroupId.Value,
+                        UserId = currentUser.Id,
+                        FullName = currentUser.FullName,
+                        Relationship = "Chủ hộ",
+                        DateOfBirth = DateTime.Today.AddYears(-30),
+                        Gender = "Nam",
+                        EmergencyPhone = currentUser.PhoneNumber,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.Members.Add(ownerMember);
+                    await _context.SaveChangesAsync();
+                }
+            }
+        }
+
         var members = await _context.Members
             .Where(m => m.FamilyGroupId == familyGroupId.Value)
             .Include(m => m.HealthMetrics)

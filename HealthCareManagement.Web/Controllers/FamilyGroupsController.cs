@@ -79,6 +79,51 @@ public class FamilyGroupsController : Controller
             }
         }
 
+        // Self-healing / Fallback: Kiểm tra xem đã có thành viên nào mang tên hoặc liên kết với Chủ hộ hiện tại trong bảng Members chưa
+        if (familyGroup != null && currentUserId.HasValue)
+        {
+            var currentUser = await _context.Users.FindAsync(currentUserId.Value);
+            if (currentUser != null)
+            {
+                bool ownerExists = await _context.Members.AnyAsync(m =>
+                    m.FamilyGroupId == familyGroup.Id &&
+                    ((m.UserId.HasValue && m.UserId.Value == currentUser.Id) ||
+                     (!string.IsNullOrWhiteSpace(m.FullName) && m.FullName.Trim() == currentUser.FullName.Trim()))
+                );
+
+                if (!ownerExists)
+                {
+                    var ownerMember = new Member
+                    {
+                        FamilyGroupId = familyGroup.Id,
+                        UserId = currentUser.Id,
+                        FullName = currentUser.FullName,
+                        Relationship = "Chủ hộ",
+                        DateOfBirth = DateTime.Today.AddYears(-30),
+                        Gender = "Nam",
+                        EmergencyPhone = currentUser.PhoneNumber,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.Members.Add(ownerMember);
+                    await _context.SaveChangesAsync();
+
+                    ownerMember.User = currentUser;
+                    familyGroup.Members.Add(ownerMember);
+                }
+                else if (!familyGroup.Members.Any(m => (m.UserId.HasValue && m.UserId.Value == currentUser.Id) || m.FullName.Trim() == currentUser.FullName.Trim()))
+                {
+                    var existingMember = await _context.Members
+                        .Include(m => m.User)
+                        .FirstOrDefaultAsync(m => m.FamilyGroupId == familyGroup.Id && ((m.UserId.HasValue && m.UserId.Value == currentUser.Id) || m.FullName.Trim() == currentUser.FullName.Trim()));
+                    if (existingMember != null)
+                    {
+                        familyGroup.Members.Add(existingMember);
+                    }
+                }
+            }
+        }
+
         // Map sang FamilyGroupViewModel để View hiển thị
         var model = new FamilyGroupViewModel
         {
@@ -153,7 +198,7 @@ public class FamilyGroupsController : Controller
         string roleBadgeType = "dependent";
         if (m.Relationship.Contains("Chủ hộ"))
         {
-            medicalRole = "Chủ hộ (Toàn quyền)";
+            medicalRole = "Chủ hộ / Quản trị viên";
             roleBadgeType = "owner";
         }
         else if (m.Relationship.Contains("Giám hộ") || m.Relationship == "Vợ" || m.Relationship == "Chồng")

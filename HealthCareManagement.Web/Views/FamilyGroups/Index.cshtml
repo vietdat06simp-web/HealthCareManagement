@@ -285,13 +285,13 @@
                                     <div class="text-xs text-slate-500 mt-0.5">@member.PhoneNumber @(!string.IsNullOrEmpty(member.IdentityOrInsurance) ? $"• {member.IdentityOrInsurance}" : "")</div>
                                 </td>
                                 <td class="py-4 px-4">
-                                    @if (member.RoleBadgeType == "owner" || member.MedicalRole.Contains("Chủ hộ"))
+                                    @if (member.RoleBadgeType == "owner" || member.MedicalRole.Contains("Chủ hộ") || member.Relationship == "Chủ hộ")
                                     {
-                                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-50 text-[#0284C7] border border-sky-200">
+                                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-sky-50 to-indigo-50 text-[#0284C7] border border-sky-300 shadow-xs">
                                             <svg class="w-3.5 h-3.5 text-sky-600" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clip-rule="evenodd"></path>
                                             </svg>
-                                            <span>@member.MedicalRole</span>
+                                            <span class="text-sky-800 font-extrabold">Chủ hộ / Quản trị viên</span>
                                         </div>
                                     }
                                     else if (member.RoleBadgeType == "guardian" || member.MedicalRole.Contains("Giám hộ"))
@@ -305,11 +305,11 @@
                                     }
                                     else
                                     {
-                                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-[#F59E0B] border border-amber-200">
-                                            <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                             </svg>
-                                            <span>@member.MedicalRole</span>
+                                            <span>@(string.IsNullOrEmpty(member.MedicalRole) || member.MedicalRole == member.Relationship ? "Thành viên phụ thuộc" : member.MedicalRole)</span>
                                         </div>
                                     }
                                 </td>

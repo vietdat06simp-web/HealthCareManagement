@@ -203,7 +203,22 @@ public class AccountController : Controller
         _context.FamilyGroups.Add(familyGroup);
         await _context.SaveChangesAsync();
 
-        // 5. Tự động đăng nhập (SignInAsync với Claims: NameIdentifier, Name, Email, Role, FamilyGroupId)
+        // 5. Tự động tạo bản ghi Member đại diện cho chính Chủ hộ trong bảng Members
+        var ownerMember = new Member
+        {
+            FamilyGroupId = familyGroup.Id,
+            UserId = user.Id,
+            FullName = user.FullName,
+            Relationship = "Chủ hộ",
+            DateOfBirth = DateTime.Today.AddYears(-30),
+            Gender = "Nam",
+            EmergencyPhone = user.PhoneNumber,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.Members.Add(ownerMember);
+        await _context.SaveChangesAsync();
+
+        // 6. Tự động đăng nhập (SignInAsync với Claims: NameIdentifier, Name, Email, Role, FamilyGroupId)
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
