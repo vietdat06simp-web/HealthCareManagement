@@ -4,6 +4,12 @@ using HealthCareManagement.Web.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+var cultureInfo = new System.Globalization.CultureInfo("vi-VN");
+cultureInfo.NumberFormat.NumberDecimalSeparator = ".";
+cultureInfo.NumberFormat.CurrencyDecimalSeparator = ".";
+System.Globalization.CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+
 builder.Services.AddControllersWithViews();
 
 // Register ApplicationDbContext with SQL Server

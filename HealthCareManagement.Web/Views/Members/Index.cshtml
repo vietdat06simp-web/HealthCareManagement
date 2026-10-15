@@ -1,6 +1,10 @@
-@model List<HealthCareManagement.Web.Models.Entities.Member>
+@model HealthCareManagement.Web.Models.ViewModels.MembersIndexViewModel
 @{
     ViewData["Title"] = "Quản Lý Thành Viên & Chỉ Số Sinh Hiệu";
+    var allMetrics = Model.Members?.SelectMany(m => m.HealthMetrics ?? Enumerable.Empty<HealthCareManagement.Web.Models.Entities.HealthMetric>()).ToList() ?? new();
+    var metricsWithBP = allMetrics.Where(m => m.SystolicBP.HasValue && m.DiastolicBP.HasValue).ToList();
+    var avgSys = metricsWithBP.Any() ? (int)Math.Round(metricsWithBP.Average(m => m.SystolicBP!.Value)) : 120;
+    var avgDia = metricsWithBP.Any() ? (int)Math.Round(metricsWithBP.Average(m => m.DiastolicBP!.Value)) : 80;
 }
 
 @section Styles {
@@ -43,6 +47,32 @@
 }
 
 <div class="flex flex-col w-full gap-6">
+    <!-- NOTIFICATIONS / TEMPDATA -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="p-3.5 bg-emerald-50 border border-emerald-200/90 rounded-xl flex items-center justify-between text-emerald-800 text-xs font-semibold shadow-xs transition-all">
+            <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-[20px] text-emerald-600">check_circle</span>
+                <span>@TempData["SuccessMessage"]</span>
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" class="text-emerald-500 hover:text-emerald-700 p-1 cursor-pointer">
+                <span class="material-symbols-outlined text-[16px]">close</span>
+            </button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="p-3.5 bg-rose-50 border border-rose-200/90 rounded-xl flex items-center justify-between text-rose-800 text-xs font-semibold shadow-xs transition-all">
+            <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-[20px] text-rose-600">error</span>
+                <span>@TempData["ErrorMessage"]</span>
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700 p-1 cursor-pointer">
+                <span class="material-symbols-outlined text-[16px]">close</span>
+            </button>
+        </div>
+    }
+
     <!-- 1. BREADCRUMB & SYNC STATUS BAR -->
     <section class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-1 border-b border-slate-200/80">
         <nav aria-label="breadcrumb" class="flex items-center gap-1.5 font-label-md text-slate-500 overflow-x-auto whitespace-nowrap py-1">
@@ -73,7 +103,7 @@
         <div class="max-w-2xl">
             <div class="flex items-center gap-2 mb-1">
                 <span class="material-symbols-outlined text-primary text-[22px]">diversity_1</span>
-                <span class="font-label-sm text-primary uppercase font-bold tracking-wider">Hồ sơ sức khỏe gia đình</span>
+                <span class="font-label-sm text-primary uppercase font-bold tracking-wider">@Model.FamilyGroupName</span>
             </div>
             <h1 class="font-headline-lg text-slate-900 tracking-tight m-0">QUẢN LÝ THÀNH VIÊN GIA ĐÌNH</h1>
             <p class="font-body-md text-slate-500 mt-1 mb-0">
@@ -87,20 +117,26 @@
                 <span class="text-xs sm:text-sm">Xuất báo cáo PDF</span>
             </button>
 
-            <!-- Nút Thêm thành viên mới -->
-            <a asp-controller="Members" asp-action="Create" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369a1] text-white font-semibold shadow-md shadow-sky-600/20 transition-all cursor-pointer text-decoration-none">
+            <!-- Nút Mở Modal Đo chỉ số nhanh -->
+            <button type="button" onclick="openVitalsModal()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-sky-200 bg-sky-50 hover:bg-sky-100 text-primary font-semibold shadow-xs transition-all cursor-pointer">
+                <span class="material-symbols-outlined text-[20px] text-primary">speed</span>
+                <span class="text-xs sm:text-sm">Đo chỉ số nhanh</span>
+            </button>
+
+            <!-- Nút Thêm thành viên mới (Mở Modal) -->
+            <button type="button" onclick="openAddMemberModal()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369a1] text-white font-semibold shadow-md shadow-sky-600/20 transition-all cursor-pointer">
                 <span class="material-symbols-outlined text-[20px] text-white">person_add</span>
                 <span class="text-white text-xs sm:text-sm">Thêm thành viên mới</span>
-            </a>
+            </button>
         </div>
     </section>
 
     <!-- 3. MEMBER PROFILE CARDS (2x2 Grid) -->
     <section>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            @if (Model != null && Model.Any())
+            @if (Model.Members != null && Model.Members.Any())
             {
-                foreach (var member in Model)
+                foreach (var member in Model.Members)
                 {
                     var initials = !string.IsNullOrWhiteSpace(member.FullName)
                         ? string.Join("", member.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(s => s[0])).ToUpper()
@@ -140,10 +176,13 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="relative">
-                                    <a asp-controller="Members" asp-action="Edit" asp-route-id="@member.Id" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors inline-block" title="Chỉnh sửa thông tin">
+                                <div class="relative flex items-center gap-1">
+                                    <button type="button" onclick="openEditMemberModal('@member.Id', '@Html.Raw(member.FullName.Replace("'", "\\'"))', '@Html.Raw(member.Relationship.Replace("'", "\\'"))', '@member.DateOfBirth.ToString("yyyy-MM-dd")', '@member.Gender', '@(member.BloodGroup ?? "")', '@(member.InsuranceNumber ?? "")', '@(member.EmergencyPhone ?? "")', '@Html.Raw((member.MedicalHistory ?? "").Replace("'", "\\'"))', '@Html.Raw((member.Allergies ?? "").Replace("'", "\\'"))')" class="text-slate-400 hover:text-sky-600 p-1.5 rounded-lg hover:bg-sky-50 transition-colors inline-block cursor-pointer" title="Chỉnh sửa thông tin">
                                         <span class="material-symbols-outlined text-[18px]">edit</span>
-                                    </a>
+                                    </button>
+                                    <button type="button" onclick="confirmDeleteMember('@member.Id', '@Html.Raw(member.FullName.Replace("'", "\\'"))')" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors inline-block cursor-pointer" title="Xóa thành viên">
+                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                    </button>
                                 </div>
                             </div>
 
@@ -169,7 +208,7 @@
                                     foreach (var al in member.MemberAllergies)
                                     {
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-medium">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>Dị ứng @al.AllergenName
+                                            <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>Dị ứng: @al.AllergenName
                                         </span>
                                     }
                                 }
@@ -202,10 +241,16 @@
                                     </div>
                                     @if (latestMetric?.SystolicBP != null)
                                     {
-                                        if (latestMetric.SystolicBP > 135 || latestMetric.DiastolicBP > 85)
+                                        if (latestMetric.SystolicBP >= 140 || latestMetric.DiastolicBP >= 90)
+                                        {
+                                            <span class="inline-flex items-center gap-0.5 text-[10px] font-semibold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200/60">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Nguy cơ
+                                            </span>
+                                        }
+                                        else if (latestMetric.SystolicBP > 130 || latestMetric.DiastolicBP > 85)
                                         {
                                             <span class="inline-flex items-center gap-0.5 text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Hơi cao
+                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Lưu ý
                                             </span>
                                         }
                                         else
@@ -235,7 +280,14 @@
                                     </div>
                                     @if (latestMetric?.HeartRate != null)
                                     {
-                                        <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60">Bình thường</span>
+                                        if (latestMetric.HeartRate > 100 || latestMetric.HeartRate < 50)
+                                        {
+                                            <span class="text-[10px] text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200/60 font-semibold">Bất thường</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60 font-medium">Bình thường</span>
+                                        }
                                     }
                                     else
                                     {
@@ -246,12 +298,24 @@
                         </div>
 
                         <!-- Card Bottom Actions -->
-                        <div class="pt-2.5 border-t border-slate-100 flex items-center justify-end gap-2">
-                            <a asp-controller="Members" asp-action="Details" asp-route-id="@member.Id" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium transition-colors text-decoration-none">Xem hồ sơ</a>
-                            <button onclick="quickFillMember('@member.Id', '@Html.Raw(member.FullName.Replace("'", "\'"))')" class="px-2.5 py-1 rounded-md bg-sky-50 text-primary border border-sky-200 hover:bg-sky-100 text-xs font-semibold transition-all inline-flex items-center gap-1 cursor-pointer" type="button">
-                                <span class="material-symbols-outlined text-[14px]">edit_note</span>
-                                <span>Nhập chỉ số</span>
-                            </button>
+                        <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                            <span class="text-[10px] text-slate-400">
+                                @if (latestMetric != null)
+                                {
+                                    <span>Đo gần nhất: @latestMetric.RecordedAt.ToLocalTime().ToString("dd/MM HH:mm")</span>
+                                }
+                                else
+                                {
+                                    <span>Chưa có dữ liệu sinh hiệu</span>
+                                }
+                            </span>
+                            <div class="flex items-center gap-2">
+                                <a asp-controller="MedicalRecords" asp-action="Index" asp-route-memberId="@member.Id" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium transition-colors text-decoration-none">Hồ sơ bệnh án</a>
+                                <button onclick="quickFillMember('@member.Id', '@Html.Raw(member.FullName.Replace("'", "\\'"))')" class="px-2.5 py-1 rounded-md bg-sky-50 text-primary border border-sky-200 hover:bg-sky-100 text-xs font-semibold transition-all inline-flex items-center gap-1 cursor-pointer" type="button">
+                                    <span class="material-symbols-outlined text-[14px]">edit_note</span>
+                                    <span>Nhập chỉ số</span>
+                                </button>
+                            </div>
                         </div>
                     </article>
                 }
@@ -264,10 +328,10 @@
                     </div>
                     <h3 class="text-base font-bold text-slate-900 mb-1">Chưa có thành viên nào trong danh sách</h3>
                     <p class="text-xs text-slate-500 max-w-md mx-auto mb-6">Thêm các thành viên trong gia đình để bắt đầu theo dõi sức khỏe, chỉ số sinh hiệu và lịch khám.</p>
-                    <a asp-controller="Members" asp-action="Create" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-xs sm:text-sm font-semibold hover:bg-sky-600 shadow-md shadow-sky-600/20 transition-all text-decoration-none">
+                    <button type="button" onclick="openAddMemberModal()" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-xs sm:text-sm font-semibold hover:bg-sky-600 shadow-md shadow-sky-600/20 transition-all cursor-pointer border-0">
                         <span class="material-symbols-outlined text-[18px]">person_add</span>
                         <span>+ Thêm thành viên mới</span>
-                    </a>
+                    </button>
                 </div>
             }
         </div>
@@ -289,16 +353,16 @@
                     </div>
                     <div id="vitalsAvgBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200/70 rounded-lg text-amber-800 text-xs font-medium self-start sm:self-auto">
                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                        <span>TB: <strong class="font-bold text-slate-900">134/84</strong> mmHg</span>
+                        <span>TB: <strong class="font-bold text-slate-900">@(avgSys)/@(avgDia)</strong> mmHg</span>
                     </div>
                 </div>
 
                 <!-- Member Filter Segmented Tabs -->
                 <div class="flex items-center gap-1 p-1 bg-slate-100/90 rounded-lg overflow-x-auto custom-scrollbar mb-3.5">
                     <button onclick="filterChartMember('all', this)" class="chart-tab-btn px-2.5 py-1 rounded-md bg-white text-primary text-[11px] font-bold shadow-xs whitespace-nowrap border-0 cursor-pointer" type="button">Tất cả</button>
-                    @if (Model != null && Model.Any())
+                    @if (Model.Members != null && Model.Members.Any())
                     {
-                        foreach (var m in Model)
+                        foreach (var m in Model.Members)
                         {
                             <button onclick="filterChartMember('@m.Id', this)" class="chart-tab-btn px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 hover:text-slate-900 transition-colors whitespace-nowrap border-0 bg-transparent cursor-pointer" type="button">@m.FullName</button>
                         }
@@ -374,12 +438,12 @@
                         <circle class="chart-point" cx="575" cy="150" fill="#06B6D4" r="3" stroke="#FFFFFF" stroke-width="1"></circle>
 
                         <!-- X-Axis Labels -->
-                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="middle" x="55" y="182">T2 (17)</text>
-                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="middle" x="145" y="182">T3 (18)</text>
-                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="middle" x="230" y="182">T4 (19)</text>
-                        <text fill="#EF4444" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="700" text-anchor="middle" x="315" y="182">T5 (20)</text>
-                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="middle" x="400" y="182">T6 (21)</text>
-                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="middle" x="490" y="182">T7 (22)</text>
+                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="middle" x="55" y="182">T2</text>
+                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="middle" x="145" y="182">T3</text>
+                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="middle" x="230" y="182">T4</text>
+                        <text fill="#EF4444" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="700" text-anchor="middle" x="315" y="182">T5</text>
+                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="middle" x="400" y="182">T6</text>
+                        <text fill="#64748B" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" text-anchor="middle" x="490" y="182">T7</text>
                         <text fill="#0284C7" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="700" text-anchor="middle" x="575" y="182">H.nay</text>
                     </svg>
                 </div>
@@ -405,7 +469,7 @@
             </div>
         </div>
 
-        <!-- RIGHT: QUICK LOG FORM -->
+        <!-- RIGHT: QUICK LOG FORM (Đo chỉ số nhanh) -->
         <div id="quickLogCard" class="lg:col-span-5 bg-white rounded-xl border border-slate-200/90 shadow-card p-5 relative">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3.5">
                 <div class="flex items-center gap-2.5">
@@ -420,17 +484,18 @@
                 <span class="material-symbols-outlined text-slate-400 text-[20px]" title="Chỉ số sinh hiệu">speed</span>
             </div>
 
-            <form id="quickLogForm" class="space-y-3">
+            <form id="quickLogForm" asp-controller="Members" asp-action="RecordVitals" method="post" class="space-y-3">
+                @Html.AntiForgeryToken()
                 <!-- Chọn Thành viên -->
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="member-select">
                         Thành viên gia đình <span class="text-rose-500">*</span>
                     </label>
                     <div class="relative">
-                        <select id="member-select" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer">
-                            @if (Model != null && Model.Any())
+                        <select id="member-select" name="MemberId" required class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer">
+                            @if (Model.Members != null && Model.Members.Any())
                             {
-                                foreach (var m in Model)
+                                foreach (var m in Model.Members)
                                 {
                                     var age = DateTime.Today.Year - m.DateOfBirth.Year;
                                     <option value="@m.Id">@m.FullName (@m.Relationship - @(age)t)</option>
@@ -453,11 +518,11 @@
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div class="relative">
-                            <input id="inputSys" class="w-full h-9 pl-3 pr-10 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" max="250" min="60" placeholder="120" type="number" value="135" required />
+                            <input id="inputSys" name="SystolicBP" class="w-full h-9 pl-3 pr-10 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" max="260" min="50" placeholder="120" type="number" value="120" />
                             <span class="absolute right-2.5 top-2.5 text-[10px] font-bold text-slate-400 pointer-events-none">SYS</span>
                         </div>
                         <div class="relative">
-                            <input id="inputDia" class="w-full h-9 pl-3 pr-10 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" max="150" min="40" placeholder="80" type="number" value="84" required />
+                            <input id="inputDia" name="DiastolicBP" class="w-full h-9 pl-3 pr-10 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" max="160" min="30" placeholder="80" type="number" value="80" />
                             <span class="absolute right-2.5 top-2.5 text-[10px] font-bold text-slate-400 pointer-events-none">DIA</span>
                         </div>
                     </div>
@@ -468,14 +533,14 @@
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="heart-rate">Nhịp tim (bpm)</label>
                         <div class="relative">
-                            <input id="heart-rate" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="75" type="number" value="76" />
+                            <input id="heart-rate" name="HeartRate" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="75" type="number" min="30" max="220" value="75" />
                             <span class="material-symbols-outlined absolute right-2.5 top-2 text-rose-500 text-[16px]">favorite</span>
                         </div>
                     </div>
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="blood-glucose">Đường huyết (mmol/L)</label>
                         <div class="relative">
-                            <input id="blood-glucose" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="5.5" step="0.1" type="number" value="6.5" />
+                            <input id="blood-glucose" name="BloodSugar" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="5.5" step="0.1" min="1.0" max="45.0" type="number" value="5.5" />
                             <span class="material-symbols-outlined absolute right-2.5 top-2 text-amber-500 text-[16px]">water_drop</span>
                         </div>
                     </div>
@@ -489,27 +554,36 @@
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div class="relative">
-                            <input id="height-input" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="168" type="number" step="0.5" value="168" />
+                            <input id="height-input" name="HeightCm" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="168" type="number" step="0.5" min="30" max="250" value="168" />
                             <span class="absolute right-2 top-2.5 text-[10px] font-semibold text-slate-400 pointer-events-none">cm</span>
                         </div>
                         <div class="relative">
-                            <input id="weight-input" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="63.2" type="number" step="0.1" value="63.2" />
+                            <input id="weight-input" name="WeightKg" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="63.2" type="number" step="0.1" min="1" max="300" value="63.2" />
                             <span class="absolute right-2 top-2.5 text-[10px] font-semibold text-slate-400 pointer-events-none">kg</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Thời điểm đo -->
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="time-context">Thời điểm đo</label>
-                    <div class="relative">
-                        <select id="time-context" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer">
-                            <option value="post-bf" selected>Sau ăn sáng 30p</option>
-                            <option value="fasting">Lúc đói (Sáng)</option>
-                            <option value="post-lunch">Sau ăn trưa 2h</option>
-                            <option value="night">Trước khi ngủ</option>
-                        </select>
-                        <span class="material-symbols-outlined absolute right-2.5 top-2 text-slate-400 pointer-events-none text-[16px]">expand_more</span>
+                <!-- Nồng độ oxy SpO2 & Thời điểm đo -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="spo2-input">SpO2 (%)</label>
+                        <div class="relative">
+                            <input id="spo2-input" name="SpO2" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="98" type="number" min="50" max="100" value="98" />
+                            <span class="material-symbols-outlined absolute right-2.5 top-2 text-cyan-500 text-[16px]">air</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="time-context">Thời điểm đo</label>
+                        <div class="relative">
+                            <select id="time-context" name="TimeContext" class="w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer">
+                                <option value="Sau ăn sáng 30p" selected>Sau ăn sáng 30p</option>
+                                <option value="Lúc đói (Sáng)">Lúc đói (Sáng)</option>
+                                <option value="Sau ăn trưa 2h">Sau ăn trưa 2h</option>
+                                <option value="Trước khi ngủ">Trước khi ngủ</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-2.5 top-2 text-slate-400 pointer-events-none text-[16px]">expand_more</span>
+                        </div>
                     </div>
                 </div>
 
@@ -524,6 +598,438 @@
         </div>
     </section>
 </div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 1: THÊM THÀNH VIÊN MỚI (POST /Members/Create)                      -->
+<!-- ========================================================================= -->
+<div id="addMemberModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-opacity hidden" aria-hidden="true" role="dialog">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 flex-shrink-0">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-sky-100 text-primary flex items-center justify-center shadow-inner">
+                    <span class="material-symbols-outlined text-[20px]">person_add</span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900 m-0">Thêm Thành Viên Mới</h3>
+                    <p class="text-[11px] text-slate-500 m-0">Tạo hồ sơ y tế cho thành viên trong tổ ấm</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeAddMemberModal()" class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 flex items-center justify-center transition-colors cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+
+        <!-- Modal Body (Form) -->
+        <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
+            <form id="addMemberForm" asp-controller="Members" asp-action="Create" method="post" class="space-y-4">
+                @Html.AntiForgeryToken()
+
+                <!-- Họ và tên -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1" for="createFullName">
+                        Họ và tên <span class="text-rose-500">*</span>
+                    </label>
+                    <input id="createFullName" name="FullName" required maxlength="100" placeholder="VD: Nguyễn Văn An" class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-medium" />
+                </div>
+
+                <!-- Quan hệ & Giới tính -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="createRelationship">
+                            Quan hệ <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <select id="createRelationship" name="Relationship" required class="w-full h-10 pl-3.5 pr-8 rounded-xl border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer">
+                                <option value="Chủ hộ">Chủ hộ</option>
+                                <option value="Vợ">Vợ</option>
+                                <option value="Chồng">Chồng</option>
+                                <option value="Con" selected>Con</option>
+                                <option value="Bố">Bố</option>
+                                <option value="Mẹ">Mẹ</option>
+                                <option value="Ông">Ông</option>
+                                <option value="Bà">Bà</option>
+                                <option value="Anh/Chị/Em">Anh/Chị/Em</option>
+                                <option value="Khác">Khác</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-2.5 top-2.5 text-slate-400 pointer-events-none text-[18px]">expand_more</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="createGender">
+                            Giới tính <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <select id="createGender" name="Gender" required class="w-full h-10 pl-3.5 pr-8 rounded-xl border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer">
+                                <option value="Nam" selected>Nam</option>
+                                <option value="Nữ">Nữ</option>
+                                <option value="Khác">Khác</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-2.5 top-2.5 text-slate-400 pointer-events-none text-[18px]">expand_more</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ngày sinh & Nhóm máu -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="createDob">
+                            Ngày sinh <span class="text-rose-500">*</span>
+                        </label>
+                        <input id="createDob" name="DateOfBirth" type="date" required value="2000-01-01" class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-medium" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="createBloodGroup">Nhóm máu</label>
+                        <div class="relative">
+                            <select id="createBloodGroup" name="BloodGroup" class="w-full h-10 pl-3.5 pr-8 rounded-xl border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer">
+                                <option value="">Chưa rõ</option>
+                                <option value="A+">A+</option>
+                                <option value="B+">B+</option>
+                                <option value="O+" selected>O+</option>
+                                <option value="AB+">AB+</option>
+                                <option value="A-">A-</option>
+                                <option value="B-">B-</option>
+                                <option value="O-">O-</option>
+                                <option value="AB-">AB-</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-2.5 top-2.5 text-slate-400 pointer-events-none text-[18px]">expand_more</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mã BHYT & SĐT liên hệ -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="createInsurance">Mã thẻ BHYT</label>
+                        <input id="createInsurance" name="InsuranceNumber" maxlength="30" placeholder="VD: GD4010123456789" class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 uppercase focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-mono" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="createPhone">Số điện thoại liên lạc</label>
+                        <input id="createPhone" name="EmergencyPhone" type="tel" maxlength="15" placeholder="0901 234 567" class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+                    </div>
+                </div>
+
+                <!-- Tiền sử bệnh nền -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1" for="createMedicalHistory">Tiền sử bệnh nền tóm tắt</label>
+                    <input id="createMedicalHistory" name="MedicalHistory" maxlength="500" placeholder="VD: Cao huyết áp, hen suyễn, tiền đái tháo đường..." class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+                </div>
+
+                <!-- Dị ứng -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1" for="createAllergies">Dị ứng thuốc / thức ăn</label>
+                    <input id="createAllergies" name="Allergies" maxlength="500" placeholder="VD: Dị ứng Penicillin, hải sản, phấn hoa..." class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                    <button type="button" onclick="closeAddMemberModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">
+                        Hủy bỏ
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-primary hover:bg-[#0369a1] text-white text-xs font-bold shadow-md shadow-sky-600/20 transition-all inline-flex items-center gap-1.5 cursor-pointer border-0">
+                        <span class="material-symbols-outlined text-[18px]">person_add</span>
+                        <span>Lưu thành viên</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 2: CHỈNH SỬA THÀNH VIÊN (POST /Members/Edit)                        -->
+<!-- ========================================================================= -->
+<div id="editMemberModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-opacity hidden" aria-hidden="true" role="dialog">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 flex-shrink-0">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-sky-100 text-primary flex items-center justify-center shadow-inner">
+                    <span class="material-symbols-outlined text-[20px]">edit</span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900 m-0">Chỉnh Sửa Hồ Sơ</h3>
+                    <p class="text-[11px] text-slate-500 m-0">Cập nhật thông tin thành viên gia đình</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeEditMemberModal()" class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 flex items-center justify-center transition-colors cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
+            <form id="editMemberForm" asp-controller="Members" asp-action="Edit" method="post" class="space-y-4">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="editMemberId" name="Id" />
+
+                <!-- Họ và tên -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1" for="editFullName">
+                        Họ và tên <span class="text-rose-500">*</span>
+                    </label>
+                    <input id="editFullName" name="FullName" required maxlength="100" class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-medium" />
+                </div>
+
+                <!-- Quan hệ & Giới tính -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="editRelationship">
+                            Quan hệ <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <select id="editRelationship" name="Relationship" required class="w-full h-10 pl-3.5 pr-8 rounded-xl border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer">
+                                <option value="Chủ hộ">Chủ hộ</option>
+                                <option value="Vợ">Vợ</option>
+                                <option value="Chồng">Chồng</option>
+                                <option value="Con">Con</option>
+                                <option value="Bố">Bố</option>
+                                <option value="Mẹ">Mẹ</option>
+                                <option value="Ông">Ông</option>
+                                <option value="Bà">Bà</option>
+                                <option value="Anh/Chị/Em">Anh/Chị/Em</option>
+                                <option value="Khác">Khác</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-2.5 top-2.5 text-slate-400 pointer-events-none text-[18px]">expand_more</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="editGender">
+                            Giới tính <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <select id="editGender" name="Gender" required class="w-full h-10 pl-3.5 pr-8 rounded-xl border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer">
+                                <option value="Nam">Nam</option>
+                                <option value="Nữ">Nữ</option>
+                                <option value="Khác">Khác</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-2.5 top-2.5 text-slate-400 pointer-events-none text-[18px]">expand_more</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ngày sinh & Nhóm máu -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="editDob">
+                            Ngày sinh <span class="text-rose-500">*</span>
+                        </label>
+                        <input id="editDob" name="DateOfBirth" type="date" required class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-medium" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="editBloodGroup">Nhóm máu</label>
+                        <div class="relative">
+                            <select id="editBloodGroup" name="BloodGroup" class="w-full h-10 pl-3.5 pr-8 rounded-xl border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer">
+                                <option value="">Chưa rõ</option>
+                                <option value="A+">A+</option>
+                                <option value="B+">B+</option>
+                                <option value="O+">O+</option>
+                                <option value="AB+">AB+</option>
+                                <option value="A-">A-</option>
+                                <option value="B-">B-</option>
+                                <option value="O-">O-</option>
+                                <option value="AB-">AB-</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-2.5 top-2.5 text-slate-400 pointer-events-none text-[18px]">expand_more</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mã BHYT & SĐT liên hệ -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="editInsurance">Mã thẻ BHYT</label>
+                        <input id="editInsurance" name="InsuranceNumber" maxlength="30" class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 uppercase focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-mono" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="editPhone">Số điện thoại liên lạc</label>
+                        <input id="editPhone" name="EmergencyPhone" type="tel" maxlength="15" class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+                    </div>
+                </div>
+
+                <!-- Tiền sử bệnh nền -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1" for="editMedicalHistory">Tiền sử bệnh nền tóm tắt</label>
+                    <input id="editMedicalHistory" name="MedicalHistory" maxlength="500" class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+                </div>
+
+                <!-- Dị ứng -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1" for="editAllergies">Dị ứng thuốc / thức ăn</label>
+                    <input id="editAllergies" name="Allergies" maxlength="500" class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                    <button type="button" onclick="closeEditMemberModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">
+                        Hủy bỏ
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-primary hover:bg-[#0369a1] text-white text-xs font-bold shadow-md shadow-sky-600/20 transition-all inline-flex items-center gap-1.5 cursor-pointer border-0">
+                        <span class="material-symbols-outlined text-[18px]">check</span>
+                        <span>Cập nhật thay đổi</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 3: ĐO CHỈ SỐ NHANH (POST /Members/RecordVitals)                      -->
+<!-- ========================================================================= -->
+<div id="recordVitalsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-opacity hidden" aria-hidden="true" role="dialog">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 flex-shrink-0">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-sky-100 text-primary flex items-center justify-center shadow-inner">
+                    <span class="material-symbols-outlined text-[20px]">monitor_heart</span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900 m-0">Đo Chỉ Số Sinh Hiệu Nhanh</h3>
+                    <p class="text-[11px] text-slate-500 m-0">Ghi nhận huyết áp, nhịp tim, đường huyết và SpO2</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeVitalsModal()" class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 flex items-center justify-center transition-colors cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
+            <form id="modalVitalsForm" asp-controller="Members" asp-action="RecordVitals" method="post" class="space-y-4">
+                @Html.AntiForgeryToken()
+
+                <!-- Chọn thành viên -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1" for="modalVitalsMemberId">
+                        Thành viên cần đo <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <select id="modalVitalsMemberId" name="MemberId" required class="w-full h-10 pl-3.5 pr-8 rounded-xl border border-slate-300 bg-white text-xs text-slate-800 font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer">
+                            @if (Model.Members != null && Model.Members.Any())
+                            {
+                                foreach (var m in Model.Members)
+                                {
+                                    var age = DateTime.Today.Year - m.DateOfBirth.Year;
+                                    <option value="@m.Id">@m.FullName (@m.Relationship - @(age) tuổi)</option>
+                                }
+                            }
+                            else
+                            {
+                                <option value="">Chưa có thành viên nào trong danh sách</option>
+                            }
+                        </select>
+                        <span class="material-symbols-outlined absolute right-2.5 top-2.5 text-slate-400 pointer-events-none text-[18px]">expand_more</span>
+                    </div>
+                </div>
+
+                <!-- Huyết áp -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-xs font-semibold text-slate-700 m-0">Huyết áp (Tâm thu / Tâm trương)</label>
+                        <span class="text-[10px] text-slate-400 font-medium">mmHg</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="relative">
+                            <input id="modalSys" name="SystolicBP" class="w-full h-10 pl-3.5 pr-10 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" max="260" min="50" placeholder="120" type="number" value="120" />
+                            <span class="absolute right-3 top-3 text-[10px] font-bold text-slate-400 pointer-events-none">SYS</span>
+                        </div>
+                        <div class="relative">
+                            <input id="modalDia" name="DiastolicBP" class="w-full h-10 pl-3.5 pr-10 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" max="160" min="30" placeholder="80" type="number" value="80" />
+                            <span class="absolute right-3 top-3 text-[10px] font-bold text-slate-400 pointer-events-none">DIA</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nhịp tim & SpO2 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="modalHeartRate">Nhịp tim (bpm)</label>
+                        <div class="relative">
+                            <input id="modalHeartRate" name="HeartRate" class="w-full h-10 pl-3.5 pr-8 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="75" type="number" min="30" max="220" value="75" />
+                            <span class="material-symbols-outlined absolute right-2.5 top-2.5 text-rose-500 text-[18px]">favorite</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="modalSpo2">SpO2 (%)</label>
+                        <div class="relative">
+                            <input id="modalSpo2" name="SpO2" class="w-full h-10 pl-3.5 pr-8 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="98" type="number" min="50" max="100" value="98" />
+                            <span class="material-symbols-outlined absolute right-2.5 top-2.5 text-cyan-500 text-[18px]">air</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Đường huyết & Thân nhiệt -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="modalBloodSugar">Đường huyết (mmol/L)</label>
+                        <div class="relative">
+                            <input id="modalBloodSugar" name="BloodSugar" class="w-full h-10 pl-3.5 pr-8 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="5.5" step="0.1" min="1.0" max="45.0" type="number" value="5.5" />
+                            <span class="material-symbols-outlined absolute right-2.5 top-2.5 text-amber-500 text-[18px]">water_drop</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="modalBodyTemp">Thân nhiệt (°C)</label>
+                        <div class="relative">
+                            <input id="modalBodyTemp" name="BodyTemperature" class="w-full h-10 pl-3.5 pr-8 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="36.8" step="0.1" min="30.0" max="45.0" type="number" value="36.8" />
+                            <span class="material-symbols-outlined absolute right-2.5 top-2.5 text-orange-500 text-[18px]">device_thermostat</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chiều cao & Cân nặng -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="modalHeight">Chiều cao (cm)</label>
+                        <input id="modalHeight" name="HeightCm" class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="168" type="number" step="0.5" min="30" max="250" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="modalWeight">Cân nặng (kg)</label>
+                        <input id="modalWeight" name="WeightKg" class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-semibold" placeholder="63.5" type="number" step="0.1" min="1" max="300" />
+                    </div>
+                </div>
+
+                <!-- Thời điểm đo & Ghi chú -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="modalTimeContext">Thời điểm đo</label>
+                        <div class="relative">
+                            <select id="modalTimeContext" name="TimeContext" class="w-full h-10 pl-3.5 pr-8 rounded-xl border border-slate-300 bg-white text-xs text-slate-800 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer">
+                                <option value="Sau ăn sáng 30p" selected>Sau ăn sáng 30p</option>
+                                <option value="Lúc đói (Sáng)">Lúc đói (Sáng)</option>
+                                <option value="Sau ăn trưa 2h">Sau ăn trưa 2h</option>
+                                <option value="Trước khi ngủ">Trước khi ngủ</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-2.5 top-2.5 text-slate-400 pointer-events-none text-[18px]">expand_more</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1" for="modalNotes">Ghi chú thêm</label>
+                        <input id="modalNotes" name="Notes" maxlength="255" placeholder="VD: Mệt mỏi nhẹ, sau tập thể dục..." class="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+                    </div>
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                    <button type="button" onclick="closeVitalsModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">
+                        Hủy bỏ
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-primary hover:bg-[#0369a1] text-white text-xs font-bold shadow-md shadow-sky-600/20 transition-all inline-flex items-center gap-1.5 cursor-pointer border-0">
+                        <span class="material-symbols-outlined text-[18px]">speed</span>
+                        <span>Lưu chỉ số sinh hiệu</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Form ẩn xóa thành viên (POST /Members/Delete) -->
+<form id="deleteMemberForm" asp-controller="Members" asp-action="Delete" method="post" class="hidden">
+    @Html.AntiForgeryToken()
+    <input type="hidden" id="deleteMemberId" name="id" value="" />
+</form>
 
 <!-- Floating Toast Container -->
 <div id="vitalsToast" class="fixed bottom-6 right-6 z-50 transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300 max-w-sm">
@@ -540,7 +1046,87 @@
 
 @section Scripts {
     <script>
-        // Tính toán BMI tự động dựa trên Chiều cao & Cân nặng
+        // Modal functions: Thêm thành viên
+        function openAddMemberModal() {
+            var modal = document.getElementById('addMemberModal');
+            modal.classList.remove('hidden');
+            document.getElementById('createFullName').focus();
+        }
+
+        function closeAddMemberModal() {
+            var modal = document.getElementById('addMemberModal');
+            modal.classList.add('hidden');
+        }
+
+        // Modal functions: Sửa thành viên
+        function openEditMemberModal(id, fullName, relationship, dob, gender, bloodGroup, insurance, phone, medicalHistory, allergies) {
+            document.getElementById('editMemberId').value = id;
+            document.getElementById('editFullName').value = fullName;
+            document.getElementById('editRelationship').value = relationship;
+            document.getElementById('editDob').value = dob;
+            document.getElementById('editGender').value = gender;
+            document.getElementById('editBloodGroup').value = bloodGroup || "";
+            document.getElementById('editInsurance').value = insurance || "";
+            document.getElementById('editPhone').value = phone || "";
+            document.getElementById('editMedicalHistory').value = medicalHistory || "";
+            document.getElementById('editAllergies').value = allergies || "";
+
+            var modal = document.getElementById('editMemberModal');
+            modal.classList.remove('hidden');
+            document.getElementById('editFullName').focus();
+        }
+
+        function closeEditMemberModal() {
+            var modal = document.getElementById('editMemberModal');
+            modal.classList.add('hidden');
+        }
+
+        // Modal functions: Đo sinh hiệu
+        function openVitalsModal(memberId) {
+            if (memberId) {
+                var select = document.getElementById('modalVitalsMemberId');
+                if (select) select.value = memberId;
+            }
+            var modal = document.getElementById('recordVitalsModal');
+            modal.classList.remove('hidden');
+            document.getElementById('modalSys').focus();
+        }
+
+        function closeVitalsModal() {
+            var modal = document.getElementById('recordVitalsModal');
+            modal.classList.add('hidden');
+        }
+
+        // Xóa thành viên với xác nhận
+        function confirmDeleteMember(id, name) {
+            if (confirm("Bạn có chắc chắn muốn xóa thành viên " + name + " khỏi tổ ấm? Toàn bộ chỉ số sinh hiệu của thành viên này cũng sẽ bị xóa.")) {
+                document.getElementById('deleteMemberId').value = id;
+                document.getElementById('deleteMemberForm').submit();
+            }
+        }
+
+        // Đóng modal khi nhấn phím Escape
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeAddMemberModal();
+                closeEditMemberModal();
+                closeVitalsModal();
+            }
+        });
+
+        // Đóng modal khi click ra ngoài nền tối
+        ['addMemberModal', 'editMemberModal', 'recordVitalsModal'].forEach(function(modalId) {
+            var modal = document.getElementById(modalId);
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        modal.classList.add('hidden');
+                    }
+                });
+            }
+        });
+
+        // Tính toán BMI tự động dựa trên Chiều cao & Cân nặng ở Quick Log Form
         function calculateBmi() {
             var heightCm = parseFloat(document.getElementById('height-input').value);
             var weightKg = parseFloat(document.getElementById('weight-input').value);
@@ -571,13 +1157,14 @@
             }
         }
 
-        document.getElementById('height-input').addEventListener('input', calculateBmi);
-        document.getElementById('weight-input').addEventListener('input', calculateBmi);
+        document.getElementById('height-input')?.addEventListener('input', calculateBmi);
+        document.getElementById('weight-input')?.addEventListener('input', calculateBmi);
 
         // Toast thông báo tương tác hiện đại
         var toastTimer = null;
         function showToast(title, message, isSuccess = true) {
             var toast = document.getElementById('vitalsToast');
+            if (!toast) return;
             var titleEl = document.getElementById('toastTitle');
             var msgEl = document.getElementById('toastMessage');
             var iconWrap = document.getElementById('toastIconWrapper');
@@ -606,18 +1193,21 @@
         // Tương tác nút "Nhập chỉ số" từ Card -> chuyển chọn nhanh và focus form
         function quickFillMember(val, name) {
             var select = document.getElementById('member-select');
-            select.value = val;
+            if (select) select.value = val;
+            var modalSelect = document.getElementById('modalVitalsMemberId');
+            if (modalSelect) modalSelect.value = val;
+
             var card = document.getElementById('quickLogCard');
-            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            // Highlight viền card
-            card.classList.add('ring-2', 'ring-primary');
-            setTimeout(function () {
-                card.classList.remove('ring-2', 'ring-primary');
-            }, 1500);
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.classList.add('ring-2', 'ring-primary');
+                setTimeout(function () {
+                    card.classList.remove('ring-2', 'ring-primary');
+                }, 1500);
+            }
 
             showToast("Đã chọn thành viên", "Đang sẵn sàng ghi nhận chỉ số cho " + name, false);
-            document.getElementById('inputSys').focus();
+            document.getElementById('inputSys')?.focus();
         }
 
         // Tương tác Tab lọc biểu đồ
@@ -626,27 +1216,11 @@
                 b.className = "chart-tab-btn px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 hover:text-slate-900 transition-colors whitespace-nowrap border-0 bg-transparent cursor-pointer";
             });
             btn.className = "chart-tab-btn px-2.5 py-1 rounded-md bg-white text-primary text-[11px] font-bold shadow-xs whitespace-nowrap border-0 cursor-pointer";
-
-            var avgBadge = document.getElementById('vitalsAvgBadge');
-            if (avgBadge) {
-                avgBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span>TB: <strong class="font-bold text-slate-900">120/80</strong> mmHg</span>';
-            }
         }
 
         // Xuất báo cáo PDF
-        document.getElementById('btnExportPdf').addEventListener('click', function () {
+        document.getElementById('btnExportPdf')?.addEventListener('click', function () {
             showToast("Đang tạo báo cáo PDF", "Bản tóm tắt chỉ số sinh hiệu 7 ngày đang được chuẩn bị để tải xuống...");
-        });
-
-        // Xử lý submit form ghi nhận nhanh
-        document.getElementById('quickLogForm').addEventListener('submit', function (e) {
-            e.preventDefault();
-            var select = document.getElementById('member-select');
-            var memberName = select.options[select.selectedIndex].text.split('(')[0].trim();
-            var sys = document.getElementById('inputSys').value;
-            var dia = document.getElementById('inputDia').value;
-
-            showToast("Ghi nhận thành công!", "Đã đồng bộ huyết áp " + sys + "/" + dia + " mmHg cho " + memberName);
         });
 
         // Khởi tạo tính BMI lần đầu
