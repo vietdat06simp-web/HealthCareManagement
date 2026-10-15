@@ -546,7 +546,7 @@
                 </div>
 
                 <div class="space-y-3">
-                    @if (Model.TodayDosesTotal > 0 || Model.UpcomingAppointmentsCount > 0 || !string.IsNullOrEmpty(Model.LatestBloodPressure) || Model.TotalMedicalRecords > 0)
+                    @if (Model != null && (Model.TodayDosesTotal > 0 || Model.UpcomingAppointmentsCount > 0 || !string.IsNullOrEmpty(Model.LatestBloodPressure) || Model.TotalMedicalRecords > 0))
                     {
                         @if (Model.TodayDosesTotal > 0)
                         {
@@ -780,8 +780,8 @@
             <!-- Thông tin địa chỉ cấp cứu -->
             <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600">
                 <div class="font-semibold text-slate-800 mb-0.5">Địa chỉ lưu trú của gia đình:</div>
-                <div class="font-medium text-slate-700">@(string.IsNullOrWhiteSpace(Model.Address) ? "Chưa thiết lập địa chỉ gia đình (Cập nhật tại Cài đặt tổ ấm)" : Model.Address)</div>
-                @if (!string.IsNullOrWhiteSpace(Model.EmergencyPhone))
+                <div class="font-medium text-slate-700">@(string.IsNullOrWhiteSpace(Model?.Address) ? "Chưa thiết lập địa chỉ gia đình (Cập nhật tại Cài đặt tổ ấm)" : Model.Address)</div>
+                @if (!string.IsNullOrWhiteSpace(Model?.EmergencyPhone))
                 {
                     <div class="mt-1 text-slate-500">Số liên hệ khẩn cấp: <strong class="text-slate-800">@Model.EmergencyPhone</strong></div>
                 }

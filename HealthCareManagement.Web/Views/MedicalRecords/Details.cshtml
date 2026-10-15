@@ -1,0 +1,278 @@
+@model HealthCareManagement.Web.Models.ViewModels.MedicalRecordDetailsViewModel
+@{
+    ViewData["Title"] = $"Chi tiết bệnh án - {Model.Record.Diagnosis}";
+    var record = Model.Record;
+    var member = record.Member;
+}
+
+<div class="flex flex-col w-full gap-5">
+    <!-- Breadcrumb -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
+        <nav aria-label="Breadcrumb" class="flex items-center gap-1.5 font-label-md text-slate-500 overflow-x-auto whitespace-nowrap py-1">
+            <a asp-controller="Home" asp-action="Index" class="hover:text-sky-600 transition-colors flex items-center gap-1 text-slate-500 text-decoration-none">
+                <span class="material-symbols-outlined text-[16px]">home</span>
+                Trang chủ
+            </a>
+            <span class="text-slate-300">/</span>
+            <a asp-controller="MedicalRecords" asp-action="Index" class="hover:text-sky-600 transition-colors text-slate-500 text-decoration-none">
+                Hồ sơ y tế
+            </a>
+            <span class="text-slate-300">/</span>
+            <span class="text-sky-700 font-semibold">Chi tiết đợt khám #@record.Id</span>
+        </nav>
+
+        <a asp-controller="MedicalRecords" asp-action="Index" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-all text-decoration-none self-start sm:self-auto shadow-xs">
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>Quay lại danh sách</span>
+        </a>
+    </div>
+
+    <!-- Main Detail Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/90 overflow-hidden">
+        <!-- Card Header Banner -->
+        <div class="p-6 bg-gradient-to-r from-sky-900 via-sky-800 to-indigo-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shrink-0">
+                    <span class="material-symbols-outlined text-[32px]">clinical_notes</span>
+                </div>
+                <div>
+                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                        <span class="px-2.5 py-0.5 rounded-full bg-sky-500/30 text-sky-200 text-xs font-bold border border-sky-400/30">
+                            Ngày khám: @record.ExamDate.ToString("dd/MM/yyyy")
+                        </span>
+                        @if (!string.IsNullOrEmpty(record.DiagnosisCode))
+                        {
+                            <span class="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold border border-amber-300/30">
+                                ICD-10: @record.DiagnosisCode
+                            </span>
+                        }
+                    </div>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight m-0 text-white">@record.Diagnosis</h1>
+                    <p class="text-sm text-sky-200/90 mt-1 m-0 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[16px]">domain</span>
+                        <span>@record.HospitalName</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Actions Header -->
+            <div class="flex items-center gap-2 self-start md:self-auto shrink-0">
+                <button type="button" onclick="confirmDeleteRecord(@record.Id)" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-400/30 text-xs font-semibold cursor-pointer transition-all">
+                    <span class="material-symbols-outlined text-[16px]">delete</span>
+                    <span>Xóa hồ sơ</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Body Content Grid -->
+        <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left 2 Cols: Clinical details -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Patient & Doctor Info Strip -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200/70">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-sky-600 to-cyan-500 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+                            @(string.IsNullOrEmpty(member?.FullName) ? "?" : member.FullName.Substring(0, 1).ToUpper())
+                        </div>
+                        <div>
+                            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Bệnh nhân</div>
+                            <div class="text-sm font-bold text-slate-900">@(member?.FullName ?? "Chưa xác định")</div>
+                            <div class="text-xs text-slate-500">Quan hệ: @(member?.Relationship ?? "Thành viên")</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0">
+                            <span class="material-symbols-outlined text-[20px]">medical_services</span>
+                        </div>
+                        <div>
+                            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Bác sĩ phụ trách</div>
+                            <div class="text-sm font-bold text-slate-900">@(string.IsNullOrEmpty(record.DoctorName) ? "Bác sĩ chuyên khoa" : record.DoctorName)</div>
+                            <div class="text-xs text-slate-500">Tại: @record.HospitalName</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Treatment Plan / Conclusion -->
+                <div class="space-y-2">
+                    <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 m-0">
+                        <span class="material-symbols-outlined text-sky-600 text-[18px]">prescriptions</span>
+                        <span>Phác đồ điều trị &amp; Lời dặn dò bác sĩ</span>
+                    </h3>
+                    <div class="p-4 rounded-xl bg-sky-50/50 border border-sky-100 text-slate-700 text-sm leading-relaxed">
+                        @if (!string.IsNullOrWhiteSpace(record.Conclusion))
+                        {
+                            <p class="m-0 whitespace-pre-line">@record.Conclusion</p>
+                        }
+                        else
+                        {
+                            <p class="m-0 text-slate-400 italic">Chưa ghi nhận phác đồ điều trị hoặc kết luận cụ thể cho đợt khám này.</p>
+                        }
+                    </div>
+                </div>
+
+                <!-- Additional Notes -->
+                @if (!string.IsNullOrWhiteSpace(record.Notes))
+                {
+                    <div class="space-y-2">
+                        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 m-0">
+                            <span class="material-symbols-outlined text-slate-600 text-[18px]">description</span>
+                            <span>Ghi chú thêm &amp; Diễn tiến</span>
+                        </h3>
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/70 text-slate-700 text-sm leading-relaxed">
+                            <p class="m-0 whitespace-pre-line">@record.Notes</p>
+                        </div>
+                    </div>
+                }
+
+                <!-- Attachments Section -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 m-0">
+                            <span class="material-symbols-outlined text-primary text-[18px]">attachment</span>
+                            <span>Tệp đính kèm &amp; Kết quả cận lâm sàng (@Model.Attachments.Count)</span>
+                        </h3>
+                    </div>
+
+                    @if (Model.Attachments.Any())
+                    {
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            @foreach (var att in Model.Attachments)
+                            {
+                                var isImage = att.FileType.StartsWith("image/") || att.FilePath.EndsWith(".jpg") || att.FilePath.EndsWith(".png") || att.FilePath.EndsWith(".jpeg");
+                                <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-xs hover:border-sky-300 transition-all flex items-start justify-between gap-3 group">
+                                    <div class="flex items-start gap-3 overflow-hidden">
+                                        <div class="w-10 h-10 rounded-lg @(isImage ? "bg-indigo-50 text-indigo-600" : "bg-rose-50 text-rose-600") flex items-center justify-center shrink-0">
+                                            <span class="material-symbols-outlined text-[22px]">@(isImage ? "image" : "picture_as_pdf")</span>
+                                        </div>
+                                        <div class="overflow-hidden">
+                                            <div class="text-xs font-bold text-slate-800 truncate" title="@att.OriginalFileName">@att.OriginalFileName</div>
+                                            <div class="text-[11px] text-slate-400 mt-0.5">Tải lên @att.UploadedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 shrink-0">
+                                        <a href="@att.FilePath" target="_blank" class="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors" title="Xem tệp">
+                                            <span class="material-symbols-outlined text-[18px]">visibility</span>
+                                        </a>
+                                        <a href="@att.FilePath" download="@att.OriginalFileName" class="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors" title="Tải xuống">
+                                            <span class="material-symbols-outlined text-[18px]">download</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-6 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-center">
+                            <span class="material-symbols-outlined text-slate-300 text-[28px] mb-1">folder_off</span>
+                            <p class="text-xs text-slate-500 m-0">Đợt khám này chưa có tệp hình ảnh hoặc phiếu cận lâm sàng đính kèm.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Right 1 Col: Side info (Next appointment & Prescriptions) -->
+            <div class="space-y-5">
+                <!-- Appointment Box -->
+                <div class="p-5 rounded-2xl bg-gradient-to-br from-sky-50 via-indigo-50/40 to-white border border-sky-100 shadow-xs">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[18px]">event_repeat</span>
+                        </div>
+                        <h3 class="text-xs font-bold text-sky-950 uppercase tracking-wider m-0">Lịch Hẹn Tái Khám</h3>
+                    </div>
+
+                    @if (Model.NextAppointment != null)
+                    {
+                        <div class="space-y-2">
+                            <div class="text-sm font-bold text-slate-900">@Model.NextAppointment.Title</div>
+                            <div class="text-xs text-slate-600 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sky-600 text-[15px]">calendar_today</span>
+                                <span><strong>@Model.NextAppointment.AppointmentDateTime.ToString("dd/MM/yyyy")</strong> lúc @Model.NextAppointment.AppointmentDateTime.ToString("HH:mm")</span>
+                            </div>
+                            <div class="text-xs text-slate-600 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sky-600 text-[15px]">location_on</span>
+                                <span>@Model.NextAppointment.Location</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(Model.NextAppointment.DoctorName))
+                            {
+                                <div class="text-xs text-slate-600 flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-sky-600 text-[15px]">person</span>
+                                    <span>Bác sĩ: @Model.NextAppointment.DoctorName</span>
+                                </div>
+                            }
+                            <span class="inline-block mt-2 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                                @Model.NextAppointment.Status
+                            </span>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-xs text-slate-500 m-0">Không có lịch hẹn tái khám nào được lên lịch cho đợt khám này.</p>
+                    }
+                </div>
+
+                <!-- Prescriptions Box -->
+                <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-emerald-600 text-[20px]">receipt_long</span>
+                            <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider m-0">Đơn Thuốc Liên Quan</h3>
+                        </div>
+                        <span class="text-xs font-bold text-slate-500">@Model.Prescriptions.Count đơn</span>
+                    </div>
+
+                    @if (Model.Prescriptions.Any())
+                    {
+                        <div class="space-y-3">
+                            @foreach (var p in Model.Prescriptions)
+                            {
+                                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/60 text-xs">
+                                    <div class="font-bold text-slate-900 flex items-center justify-between">
+                                        <span>@p.PrescriptionName</span>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold @(p.IsActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700")">@(p.IsActive ? "Đang dùng" : "Đã xong")</span>
+                                    </div>
+                                    <div class="text-slate-500 mt-1">Từ @p.StartDate.ToString("dd/MM/yyyy") đến @p.EndDate.ToString("dd/MM/yyyy")</div>
+                                    @if (p.PrescriptionItems.Any())
+                                    {
+                                        <div class="mt-2 pt-2 border-t border-slate-200/60 space-y-1">
+                                            @foreach (var pi in p.PrescriptionItems)
+                                            {
+                                                <div class="text-slate-700 flex justify-between">
+                                                    <span>• @pi.MedicineName (@pi.DosagePerTime)</span>
+                                                    <span class="text-slate-500 font-semibold">@pi.MealTiming</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-xs text-slate-400 m-0 italic">Chưa có đơn thuốc điện tử nào liên kết với đợt khám này.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form DELETE hidden -->
+<form id="deleteRecordForm" asp-controller="MedicalRecords" asp-action="Delete" method="post" style="display: none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" id="deleteRecordId" value="" />
+</form>
+
+@section Scripts {
+    <script>
+        function confirmDeleteRecord(id) {
+            if (confirm("Bạn có chắc chắn muốn xóa hồ sơ bệnh án này? Toàn bộ tệp đính kèm và thông tin khám liên quan sẽ bị xóa vĩnh viễn.")) {
+                document.getElementById('deleteRecordId').value = id;
+                document.getElementById('deleteRecordForm').submit();
+            }
+        }
+    </script>
+}
