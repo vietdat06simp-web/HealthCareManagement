@@ -1,6 +1,8 @@
-@model HealthCareManagement.Web.Models.ViewModels.HomeDashboardViewModel
+@model HealthCareManagement.Web.Models.ViewModels.DashboardViewModel
 @{
-    ViewData["Title"] = "Trang Chủ - Bảng Điều Khiển Sức Khỏe";
+    ViewData["Title"] = "Trang Chủ - Bảng Điều Khiển Sức Khỏe Gia Đình";
+    var viCulture = new System.Globalization.CultureInfo("vi-VN");
+    var todayFormatted = DateTime.Now.ToString("dddd, dd/MM/yyyy", viCulture);
 }
 
 @section Styles {
@@ -84,13 +86,17 @@
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
             </span>
-            <span class="font-medium">Đồng bộ thời gian thực: <strong class="font-bold text-slate-900">@(Model?.SafeMembersCount ?? 0)/@(Model?.TotalMembers ?? 0) thành viên an toàn</strong></span>
+            <span class="font-medium text-xs">
+                Đồng bộ thời gian thực: 
+                <strong class="font-bold text-slate-900">
+                    @(Model?.MembersSummary?.Count(m => m.VitalStatus == "Bình thường") ?? 0)/@(Model?.TotalMembers ?? 0) thành viên ổn định
+                </strong>
+            </span>
         </div>
     </div>
 
     <!-- 2. BANNER CHÀO MỪNG CÁ NHÂN HÓA & TRẠNG THÁI SỨC KHỎE TỔNG QUAN -->
     <div class="p-6 md:p-8 rounded-3xl bg-gradient-to-r from-sky-900 via-sky-800 to-cyan-900 text-white shadow-lg relative overflow-hidden">
-        <!-- Background decorative ambient circles -->
         <div class="absolute -top-16 -right-16 w-64 h-64 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -bottom-16 -left-16 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -103,17 +109,18 @@
                 <h1 class="font-headline-lg text-white text-2xl md:text-3xl font-bold tracking-tight m-0">
                     Xin chào, @(Model?.FamilyGroupName ?? "Tổ ấm gia đình")! 👋
                 </h1>
-                <p class="font-body-md text-sky-100 text-sm md:text-base m-0 leading-relaxed">
-                    Hôm nay @DateTime.Now.ToString("dddd, dd/MM/yyyy", new System.Globalization.CultureInfo("vi-VN")). Có @(Model?.TotalMembers ?? 0) thành viên trong tổ ấm. Bạn có <strong class="text-white underline decoration-cyan-400">@(Model?.TodayDosesPending ?? 0) cữ thuốc cần uống</strong> và <strong class="text-white underline decoration-amber-400">@(Model?.UpcomingAppointmentsCount ?? 0) lịch tái khám sắp tới</strong>.
+                <p class="font-body-md text-sky-100 text-sm md:text-base m-0 leading-relaxed capitalize">
+                    Hôm nay @todayFormatted. Có <strong class="text-white font-bold">@(Model?.TotalMembers ?? 0) thành viên</strong> trong tổ ấm.
+                    Hiện có <strong id="bannerPendingCount" class="text-white underline decoration-cyan-400 font-bold">@(Model?.PendingMedicationsCount ?? 0) cữ thuốc cần uống</strong> 
+                    và <strong class="text-white underline decoration-amber-400 font-bold">@(Model?.UpcomingAppointments?.Count ?? 0) lịch tái khám sắp tới</strong>.
                 </p>
             </div>
 
-            <!-- Banner Action Buttons: Đo chỉ số & SOS Khẩn cấp -->
             <div class="flex items-center gap-3 flex-wrap shrink-0">
-                <button onclick="openModal('quickVitalsModal')" class="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-label-md font-bold shadow-md hover:shadow-cyan-500/30 transition-all cursor-pointer border-0 text-sm">
+                <a asp-controller="Members" asp-action="Index" class="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-label-md font-bold shadow-md hover:shadow-cyan-500/30 transition-all text-decoration-none cursor-pointer border-0 text-sm">
                     <span class="material-symbols-outlined text-[20px]">monitor_heart</span>
-                    <span>Đo chỉ số nhanh</span>
-                </button>
+                    <span>Ghi nhận sinh hiệu</span>
+                </a>
                 <button onclick="openModal('sosEmergencyModal')" class="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-label-md font-bold shadow-md hover:shadow-rose-600/40 transition-all cursor-pointer border-0 text-sm animate-pulse">
                     <span class="material-symbols-outlined text-[20px]">emergency</span>
                     <span>SOS Y Tế Khẩn Cấp</span>
@@ -125,23 +132,25 @@
     <!-- 3. 4 KHỐI THỐNG KÊ / QUICK STATS WIDGETS -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Widget 1: Nhắc Uống Thuốc Hôm Nay -->
-        <a asp-controller="Prescriptions" asp-action="Index" class="dashboard-stat-card bg-white p-5 rounded-2xl flex flex-col justify-between text-decoration-none group cursor-pointer">
+        <a asp-controller="Prescriptions" asp-action="Index" class="dashboard-stat-card bg-white p-5 rounded-2xl flex flex-col justify-between text-decoration-none group cursor-pointer border border-slate-200 shadow-sm hover:border-primary/50 transition-all">
             <div class="flex items-center justify-between mb-3">
                 <div class="w-12 h-12 rounded-xl bg-sky-100 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
                     <span class="material-symbols-outlined text-[26px]">medication</span>
                 </div>
-                <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-label-sm font-bold text-xs">
-                    Còn @(Model?.TodayDosesPending ?? 0) cữ
+                <span id="statPendingBadge" class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-label-sm font-bold text-xs">
+                    Còn @(Model?.PendingMedicationsCount ?? 0) cữ
                 </span>
             </div>
             <div>
                 <span class="font-label-sm text-slate-500 uppercase tracking-wider block font-semibold text-xs">Uống thuốc hôm nay</span>
-                <div class="font-metric-num text-slate-900 text-2xl font-bold mt-1">Đã uống @(Model?.TodayDosesTaken ?? 0)/@(Model?.TodayDosesTotal ?? 0)</div>
+                <div id="statDosesRatio" class="font-metric-num text-slate-900 text-2xl font-bold mt-1">
+                    Đã uống @(Model?.TakenMedicationsCount ?? 0)/@(Model?.TotalTodayMedications ?? 0)
+                </div>
                 <div class="w-full bg-slate-100 h-2 rounded-full mt-2.5 overflow-hidden">
-                    <div class="bg-gradient-to-r from-sky-500 to-cyan-500 h-full rounded-full" style="width: @(Model?.DoseProgressPercent ?? 0)%;"></div>
+                    <div id="statDoseProgressBar" class="bg-gradient-to-r from-sky-500 to-cyan-500 h-full rounded-full transition-all duration-500" style="width: @(Model?.ProgressPercent ?? 0)%;"></div>
                 </div>
                 <p class="font-body-sm text-slate-500 text-xs mt-2 m-0 flex items-center justify-between">
-                    <span>Tiến độ ngày: @(Model?.DoseProgressPercent ?? 0)%</span>
+                    <span id="statDosePercentText">Tiến độ ngày: @(Model?.ProgressPercent ?? 0)%</span>
                     <span class="text-primary font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center">
                         Chi tiết <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
                     </span>
@@ -150,25 +159,28 @@
         </a>
 
         <!-- Widget 2: Lịch Tái Khám Sắp Tới -->
-        <a asp-controller="Prescriptions" asp-action="Index" asp-route-tab="appointments" class="dashboard-stat-card bg-white p-5 rounded-2xl flex flex-col justify-between text-decoration-none group cursor-pointer">
+        <a asp-controller="Prescriptions" asp-action="Index" asp-route-tab="appointments" class="dashboard-stat-card bg-white p-5 rounded-2xl flex flex-col justify-between text-decoration-none group cursor-pointer border border-slate-200 shadow-sm hover:border-secondary/50 transition-all">
             <div class="flex items-center justify-between mb-3">
                 <div class="w-12 h-12 rounded-xl bg-cyan-100 text-secondary flex items-center justify-center group-hover:scale-105 transition-transform">
                     <span class="material-symbols-outlined text-[26px]">calendar_month</span>
                 </div>
                 <span class="px-2.5 py-0.5 rounded-full bg-cyan-100 text-cyan-800 font-label-sm font-bold text-xs">
-                    @(Model?.UpcomingAppointmentsCount > 0 ? $"{Model.UpcomingAppointmentsCount} lịch hẹn" : "Chưa có hẹn")
+                    @((Model?.UpcomingAppointments != null && Model.UpcomingAppointments.Any()) ? $"{Model.UpcomingAppointments.Count} lịch hẹn" : "Chưa có hẹn")
                 </span>
             </div>
             <div>
                 <span class="font-label-sm text-slate-500 uppercase tracking-wider block font-semibold text-xs">Lịch tái khám gần nhất</span>
+                @{
+                    var nearestApt = Model?.UpcomingAppointments?.FirstOrDefault();
+                }
                 <div class="font-metric-num text-slate-900 text-2xl font-bold mt-1">
-                    @(Model?.DaysUntilNextAppointment != null ? $"Còn {Model.DaysUntilNextAppointment} ngày" : "Không có hẹn")
+                    @(nearestApt != null ? (nearestApt.DaysLeft == 0 ? "Hôm nay" : $"Còn {nearestApt.DaysLeft} ngày") : "Không có hẹn")
                 </div>
                 <p class="font-body-sm text-slate-700 text-xs mt-1.5 m-0 font-medium truncate">
-                    @(Model?.NextAppointmentSummary ?? "Chưa có lịch hẹn tái khám")
+                    @(nearestApt != null ? $"{nearestApt.FacilityName} • {nearestApt.DoctorName}" : "Chưa có lịch hẹn tái khám")
                 </p>
                 <p class="font-body-sm text-slate-500 text-xs mt-2.5 m-0 flex items-center justify-between">
-                    <span>Bệnh nhân: @(Model?.NextAppointmentMember ?? "Chưa có")</span>
+                    <span>Bệnh nhân: @(nearestApt?.MemberName ?? "Chưa có")</span>
                     <span class="text-secondary font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center">
                         Xem lịch <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
                     </span>
@@ -177,25 +189,30 @@
         </a>
 
         <!-- Widget 3: Cảnh Báo Chỉ Số Sinh Hiệu -->
-        <a asp-controller="Members" asp-action="Index" class="dashboard-stat-card bg-white p-5 rounded-2xl flex flex-col justify-between text-decoration-none group cursor-pointer">
+        <a asp-controller="Members" asp-action="Index" class="dashboard-stat-card bg-white p-5 rounded-2xl flex flex-col justify-between text-decoration-none group cursor-pointer border border-slate-200 shadow-sm hover:border-emerald-500/50 transition-all">
+            @{
+                var abnormalCount = Model?.MembersSummary?.Count(m => m.VitalStatus == "Cần theo dõi") ?? 0;
+                var latestVital = Model?.MembersSummary?.Where(m => m.LatestSystolic.HasValue).OrderByDescending(m => m.LastMeasuredAt).FirstOrDefault();
+            }
             <div class="flex items-center justify-between mb-3">
                 <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition-transform">
                     <span class="material-symbols-outlined text-[26px]">vital_signs</span>
                 </div>
-                <span class="px-2.5 py-0.5 rounded-full @(Model?.HasAbnormalVitals == true ? "bg-rose-100 text-rose-800" : "bg-emerald-100 text-emerald-800") font-label-sm font-bold text-xs flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full @(Model?.HasAbnormalVitals == true ? "bg-rose-600" : "bg-emerald-600")"></span> @(Model?.HasAbnormalVitals == true ? "Cần lưu ý" : "Ổn định")
+                <span class="px-2.5 py-0.5 rounded-full @(abnormalCount > 0 ? "bg-rose-100 text-rose-800" : "bg-emerald-100 text-emerald-800") font-label-sm font-bold text-xs flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full @(abnormalCount > 0 ? "bg-rose-600" : "bg-emerald-600")"></span>
+                    @(abnormalCount > 0 ? $"{abnormalCount} cần lưu ý" : "Ổn định")
                 </span>
             </div>
             <div>
                 <span class="font-label-sm text-slate-500 uppercase tracking-wider block font-semibold text-xs">Sinh hiệu gia đình</span>
                 <div class="font-metric-num text-slate-900 text-2xl font-bold mt-1">
-                    @(Model?.LatestBloodPressure ?? "--/--") <span class="text-sm font-normal text-slate-500">mmHg</span>
+                    @(latestVital != null ? $"{latestVital.LatestSystolic}/{latestVital.LatestDiastolic}" : "--/--") <span class="text-sm font-normal text-slate-500">mmHg</span>
                 </div>
-                <p class="font-body-sm text-slate-700 text-xs mt-1.5 m-0 font-medium">
-                    @(Model?.LatestVitalsMember != null ? $"{Model.LatestVitalsMember} • Nhịp tim {Model.LatestHeartRate ?? 0} bpm" : "Chưa có dữ liệu sinh hiệu")
+                <p class="font-body-sm text-slate-700 text-xs mt-1.5 m-0 font-medium truncate">
+                    @(latestVital != null ? $"{latestVital.FullName} • Nhịp tim {latestVital.LatestHeartRate ?? 0} bpm" : "Chưa có dữ liệu sinh hiệu")
                 </p>
                 <p class="font-body-sm text-slate-500 text-xs mt-2.5 m-0 flex items-center justify-between">
-                    <span>SpO2: @(Model?.LatestSpO2 != null ? $"{Model.LatestSpO2}%" : "--")</span>
+                    <span>Đo gần nhất: @(latestVital?.LastMeasuredAt?.ToString("dd/MM") ?? "Chưa đo")</span>
                     <span class="text-emerald-700 font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center">
                         Chi tiết <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
                     </span>
@@ -204,23 +221,23 @@
         </a>
 
         <!-- Widget 4: Bệnh Án Điện Tử Cập Nhật Mới Nhất -->
-        <a asp-controller="MedicalRecords" asp-action="Index" class="dashboard-stat-card bg-white p-5 rounded-2xl flex flex-col justify-between text-decoration-none group cursor-pointer">
+        <a asp-controller="MedicalRecords" asp-action="Index" class="dashboard-stat-card bg-white p-5 rounded-2xl flex flex-col justify-between text-decoration-none group cursor-pointer border border-slate-200 shadow-sm hover:border-indigo-500/50 transition-all">
             <div class="flex items-center justify-between mb-3">
                 <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center group-hover:scale-105 transition-transform">
                     <span class="material-symbols-outlined text-[26px]">folder_shared</span>
                 </div>
                 <span class="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-label-sm font-bold text-xs">
-                    HL7/FHIR
+                    EMR / HL7
                 </span>
             </div>
             <div>
                 <span class="font-label-sm text-slate-500 uppercase tracking-wider block font-semibold text-xs">Hồ sơ y tế điện tử</span>
-                <div class="font-metric-num text-slate-900 text-2xl font-bold mt-1">@(Model?.TotalMedicalRecords ?? 0) Bệnh án</div>
+                <div class="font-metric-num text-slate-900 text-2xl font-bold mt-1">@(Model?.TotalRecordsCount ?? 0) Bệnh án</div>
                 <p class="font-body-sm text-slate-700 text-xs mt-1.5 m-0 font-medium">
-                    @(Model?.TotalAttachments ?? 0) cận lâm sàng • 100% số hóa
+                    100% bảo mật &amp; số hóa theo tổ ấm
                 </p>
                 <p class="font-body-sm text-slate-500 text-xs mt-2.5 m-0 flex items-center justify-between">
-                    <span>Mới cập nhật: @(Model?.LatestHospital ?? "Chưa có bản ghi")</span>
+                    <span>Thành viên: @(Model?.TotalMembers ?? 0) người</span>
                     <span class="text-indigo-700 font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center">
                         Mở kho <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
                     </span>
@@ -229,406 +246,271 @@
         </a>
     </div>
 
-    <!-- 4. CORE MODULES GRID (3 + 2 Cards) -->
-    <section>
-        <div class="flex items-center justify-between mb-4">
+    <!-- 4. HAI KHỐI TẬP TRUNG CHÍNH: CÁC CỮ THUỐC HÔM NAY VÀ LỊCH TÁI KHÁM SẮP TỚI -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- KHỐI 1: CÁC CỮ THUỐC HÔM NAY KÈM NÚT CHECK NHANH -->
+        <div class="bg-white rounded-3xl p-5 md:p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
             <div>
-                <div class="flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
-                    <h2 class="font-headline-md text-slate-900 tracking-tight m-0 text-xl font-bold">
-                        CÁC PHÂN HỆ QUẢN LÝ CHÍNH
-                    </h2>
+                <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-sky-100 text-primary flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-[24px]">pill</span>
+                        </div>
+                        <div>
+                            <h3 class="font-headline-sm text-slate-900 text-base font-bold m-0">LỊCH UỐNG THUỐC TRONG NGÀY</h3>
+                            <p class="font-body-sm text-slate-500 text-xs m-0">Xác nhận cữ thuốc trực tiếp không cần chuyển trang</p>
+                        </div>
+                    </div>
+                    <a asp-controller="Prescriptions" asp-action="Index" class="font-label-sm text-primary hover:underline font-semibold text-xs flex items-center gap-1 text-decoration-none">
+                        <span>Xem tất cả</span>
+                        <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+                    </a>
                 </div>
-                <p class="font-body-sm text-slate-500 m-0 mt-0.5">
-                    Hệ thống quản lý sức khỏe toàn diện, bảo mật và liền mạch cho từng thành viên trong gia đình
-                </p>
+
+                @if (Model?.TodayMedicationSchedules != null && Model.TodayMedicationSchedules.Any())
+                {
+                    <div class="space-y-3">
+                        @foreach (var s in Model.TodayMedicationSchedules)
+                        {
+                            var slotColor = s.TimeSlot switch
+                            {
+                                "Sáng" => "bg-amber-100 text-amber-800 border-amber-200",
+                                "Trưa" => "bg-sky-100 text-sky-800 border-sky-200",
+                                "Chiều" => "bg-orange-100 text-orange-800 border-orange-200",
+                                _ => "bg-indigo-100 text-indigo-800 border-indigo-200"
+                            };
+
+                            <div id="home-sched-@s.Id" class="p-3.5 rounded-2xl border transition-all flex items-start justify-between gap-3 @(s.IsTaken ? "bg-slate-50 border-emerald-200 opacity-90" : "bg-white border-slate-200 hover:border-sky-300 shadow-2xs")">
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="px-2 py-0.5 rounded-full font-bold text-[10px] border @slotColor">
+                                            @s.TimeSlot
+                                        </span>
+                                        <h4 id="home-sched-title-@s.Id" class="font-title-md text-slate-900 text-sm font-bold m-0 truncate @(s.IsTaken ? "line-through text-slate-400" : "")">
+                                            @s.DrugName
+                                        </h4>
+                                    </div>
+                                    <div class="text-xs text-slate-600 mt-1 flex items-center gap-1.5 flex-wrap">
+                                        <span class="font-semibold text-slate-800">@s.MemberName</span>
+                                        <span class="text-slate-300">•</span>
+                                        <span class="text-slate-500">Liều: @s.Dosage</span>
+                                        <span class="text-slate-300">•</span>
+                                        <span class="text-slate-500 italic">@s.MealTime</span>
+                                    </div>
+                                </div>
+
+                                <!-- AJAX MarkAsTaken Check Button -->
+                                <div id="home-sched-btn-container-@s.Id" class="shrink-0">
+                                    @if (s.IsTaken)
+                                    {
+                                        <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 font-label-md font-semibold text-xs border border-emerald-200">
+                                            <span class="material-symbols-outlined text-[16px]">done_all</span>
+                                            <span>Đã uống @(s.TakenAt?.ToString("HH:mm") ?? "")</span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" 
+                                                onclick="quickMarkTaken(@s.Id, '@s.DrugName', '@s.MemberName')"
+                                                id="home-btn-@s.Id"
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-50 hover:bg-emerald-600 hover:text-white text-primary font-label-md font-bold text-xs border border-sky-200 hover:border-emerald-600 transition-all cursor-pointer">
+                                            <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                                            <span>Đã uống</span>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="py-10 px-4 text-center rounded-2xl bg-slate-50 border border-dashed border-slate-200">
+                        <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-2 border border-amber-100">
+                            <span class="material-symbols-outlined text-[26px]">medication</span>
+                        </div>
+                        <h4 class="font-title-md text-slate-800 text-sm font-bold mb-1">Hôm nay không có lịch uống thuốc</h4>
+                        <p class="font-body-sm text-slate-500 text-xs mb-4">Tổ ấm hiện không có cữ thuốc nào cần uống trong ngày hôm nay.</p>
+                        <a asp-controller="Prescriptions" asp-action="Index" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-sky-600 transition-colors text-decoration-none">
+                            <span class="material-symbols-outlined text-[16px]">add</span>
+                            <span>Kê đơn thuốc mới</span>
+                        </a>
+                    </div>
+                }
             </div>
-            <a href="javascript:void(0)" onclick="showToast('Màn hình bảng điều khiển đang hiển thị theo cấu hình tiêu chuẩn tối ưu.')" class="font-label-md text-primary hover:underline flex items-center gap-1 text-xs font-semibold text-decoration-none">
-                <span>Tùy biến màn hình</span>
-                <span class="material-symbols-outlined text-[16px]">tune</span>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span>Dữ liệu nhắc nhở theo thời gian thực của tổ ấm</span>
+                <a asp-controller="Prescriptions" asp-action="Index" class="text-primary font-semibold hover:underline">
+                    Quản lý phác đồ điều trị →
+                </a>
+            </div>
+        </div>
+
+        <!-- KHỐI 2: LỊCH TÁI KHÁM SẮP TỚI (TOP 3 - 5 LỊCH HẸN) -->
+        <div class="bg-white rounded-3xl p-5 md:p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-cyan-100 text-secondary flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-[24px]">event_upcoming</span>
+                        </div>
+                        <div>
+                            <h3 class="font-headline-sm text-slate-900 text-base font-bold m-0">LỊCH TÁI KHÁM SẮP TỚI</h3>
+                            <p class="font-body-sm text-slate-500 text-xs m-0">Các mốc khám chuyên khoa và kiểm tra sức khỏe gia đình</p>
+                        </div>
+                    </div>
+                    <a asp-controller="Prescriptions" asp-action="Index" asp-route-tab="appointments" class="font-label-sm text-secondary hover:underline font-semibold text-xs flex items-center gap-1 text-decoration-none">
+                        <span>Xem tất cả</span>
+                        <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+                    </a>
+                </div>
+
+                @if (Model?.UpcomingAppointments != null && Model.UpcomingAppointments.Any())
+                {
+                    <div class="space-y-3">
+                        @foreach (var apt in Model.UpcomingAppointments)
+                        {
+                            var daysBadge = apt.DaysLeft == 0 
+                                ? "bg-rose-100 text-rose-800 border-rose-200" 
+                                : apt.DaysLeft <= 2 
+                                ? "bg-amber-100 text-amber-800 border-amber-200" 
+                                : "bg-cyan-100 text-cyan-800 border-cyan-200";
+
+                            <div class="p-3.5 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 shadow-2xs flex items-center justify-between gap-3 transition-all">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex flex-col items-center justify-center text-primary shrink-0">
+                                        <span class="font-bold text-[15px] leading-tight">@apt.AppointmentDate.ToString("dd")</span>
+                                        <span class="text-[10px] uppercase font-bold text-slate-500">Th@apt.AppointmentDate.ToString("MM")</span>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <h4 class="font-title-md text-slate-900 text-sm font-bold m-0 truncate">@apt.FacilityName</h4>
+                                        <p class="font-body-sm text-slate-600 text-xs m-0 mt-0.5 truncate">
+                                            Bác sĩ: <strong class="text-slate-800">@apt.DoctorName</strong> • Khám: <strong class="text-slate-800">@apt.MemberName</strong>
+                                        </p>
+                                        <span class="text-[11px] text-slate-400 font-medium">Giờ hẹn: @apt.AppointmentDate.ToString("HH:mm")</span>
+                                    </div>
+                                </div>
+
+                                <div class="shrink-0 text-right">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-label-sm font-bold text-xs border @daysBadge">
+                                        @(apt.DaysLeft == 0 ? "Hôm nay!" : $"Còn {apt.DaysLeft} ngày")
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="py-10 px-4 text-center rounded-2xl bg-slate-50 border border-dashed border-slate-200">
+                        <div class="w-12 h-12 rounded-xl bg-cyan-50 text-secondary flex items-center justify-center mx-auto mb-2 border border-cyan-100">
+                            <span class="material-symbols-outlined text-[26px]">calendar_month</span>
+                        </div>
+                        <h4 class="font-title-md text-slate-800 text-sm font-bold mb-1">Chưa có lịch hẹn tái khám</h4>
+                        <p class="font-body-sm text-slate-500 text-xs mb-4">Gia đình hiện chưa có mốc tái khám hay tiêm chủng nào sắp tới.</p>
+                        <a asp-controller="Appointments" asp-action="Index" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-secondary text-white text-xs font-semibold hover:bg-cyan-800 transition-colors text-decoration-none">
+                            <span class="material-symbols-outlined text-[16px]">add</span>
+                            <span>Đặt lịch tái khám</span>
+                        </a>
+                    </div>
+                }
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span>Tự động gửi thông báo nhắc nhở trước 1 ngày hẹn</span>
+                <a asp-controller="Appointments" asp-action="Index" class="text-secondary font-semibold hover:underline">
+                    Xem lịch tiêm chủng &amp; tái khám →
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 5. TÓM TẮT SỨC KHỎE NHANH CỦA CÁC THÀNH VIÊN TRONG GIA ĐÌNH -->
+    <div class="bg-white rounded-3xl p-5 md:p-6 shadow-sm border border-slate-200">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[24px]">vital_signs</span>
+                </div>
+                <div>
+                    <h3 class="font-headline-sm text-slate-900 text-base font-bold m-0">TÓM TẮT SINH HIỆU THÀNH VIÊN GIA ĐÌNH</h3>
+                    <p class="font-body-sm text-slate-500 text-xs m-0">Theo dõi nhanh tình trạng huyết áp, nhịp tim và lần đo gần nhất của từng người</p>
+                </div>
+            </div>
+            <a asp-controller="Members" asp-action="Index" class="btn-action-primary px-3.5 py-2 rounded-xl bg-primary text-white font-label-md hover:bg-primary-container transition-colors cursor-pointer flex items-center gap-1.5 border-0 text-xs font-semibold text-decoration-none self-start sm:self-auto">
+                <span class="material-symbols-outlined text-[17px]">add_chart</span>
+                <span>Ghi nhận chỉ số mới</span>
             </a>
         </div>
 
-        <div class="space-y-4">
-            <!-- Top Row: 3 Module Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Module 1: Nhắc Uống Thuốc -->
-                <article class="module-card bg-white rounded-2xl p-5 shadow-sm flex flex-col justify-between group">
-                    <div>
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="w-12 h-12 rounded-xl bg-sky-50 text-primary flex items-center justify-center group-hover:scale-105 transition-transform border border-sky-100">
-                                <span class="material-symbols-outlined text-[28px]">medication</span>
-                            </div>
-                            <span class="px-2.5 py-0.5 rounded-full bg-sky-100 text-primary font-label-sm text-xs font-semibold">
-                                4 cữ / ngày
-                            </span>
-                        </div>
-                        <h3 class="font-headline-sm text-slate-900 text-base font-bold mb-2 group-hover:text-primary transition-colors">
-                            NHẮC UỐNG THUỐC
-                        </h3>
-                        <ul class="space-y-2 mb-5 font-body-sm text-slate-600 text-xs list-none p-0">
-                            <li class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-emerald-600 text-[18px]">check_circle</span>
-                                <span>Theo dõi đơn thuốc chi tiết cho từng người</span>
-                            </li>
-                            <li class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-primary text-[18px]">schedule</span>
-                                <span>Lập lịch uống thông minh chia Sáng, Trưa, Tối</span>
-                            </li>
-                        </ul>
-                    </div>
-                    <a asp-controller="Prescriptions" asp-action="Index" class="w-full py-2.5 px-4 rounded-xl bg-slate-50 text-primary font-label-md font-semibold text-xs flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all text-decoration-none border border-slate-200">
-                        <span>Truy cập chức năng</span>
-                        <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-                    </a>
-                </article>
-
-                <!-- Module 2: Lịch Tái Khám / Tiêm -->
-                <article class="module-card bg-white rounded-2xl p-5 shadow-sm flex flex-col justify-between group">
-                    <div>
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="w-12 h-12 rounded-xl bg-cyan-50 text-secondary flex items-center justify-center group-hover:scale-105 transition-transform border border-cyan-100">
-                                <span class="material-symbols-outlined text-[28px]">calendar_month</span>
-                            </div>
-                            <span class="px-2.5 py-0.5 rounded-full bg-cyan-100 text-cyan-800 font-label-sm text-xs font-semibold">
-                                Sắp tới (2 lịch)
-                            </span>
-                        </div>
-                        <h3 class="font-headline-sm text-slate-900 text-base font-bold mb-2 group-hover:text-secondary transition-colors">
-                            LỊCH TÁI KHÁM / TIÊM
-                        </h3>
-                        <ul class="space-y-2 mb-5 font-body-sm text-slate-600 text-xs list-none p-0">
-                            <li class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-secondary text-[18px]">event_available</span>
-                                <span>Lịch hẹn bác sĩ, chuyên khoa &amp; bệnh viện</span>
-                            </li>
-                            <li class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-teal-600 text-[18px]">vaccines</span>
-                                <span>Nhắc lịch tiêm chủng trọn đời cho trẻ nhỏ</span>
-                            </li>
-                        </ul>
-                    </div>
-                    <a asp-controller="Appointments" asp-action="Index" class="w-full py-2.5 px-4 rounded-xl bg-slate-50 text-secondary font-label-md font-semibold text-xs flex items-center justify-center gap-2 hover:bg-secondary hover:text-white transition-all text-decoration-none border border-slate-200">
-                        <span>Truy cập chức năng</span>
-                        <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-                    </a>
-                </article>
-
-                <!-- Module 3: Hồ Sơ Y Tế -->
-                <article class="module-card bg-white rounded-2xl p-5 shadow-sm flex flex-col justify-between group">
-                    <div>
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition-transform border border-emerald-100">
-                                <span class="material-symbols-outlined text-[28px]">folder_shared</span>
-                            </div>
-                            <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-label-sm text-xs font-semibold">
-                                Đã số hóa 100%
-                            </span>
-                        </div>
-                        <h3 class="font-headline-sm text-slate-900 text-base font-bold mb-2 group-hover:text-emerald-700 transition-colors">
-                            HỒ SƠ Y TẾ
-                        </h3>
-                        <ul class="space-y-2 mb-5 font-body-sm text-slate-600 text-xs list-none p-0">
-                            <li class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-emerald-600 text-[18px]">clinical_notes</span>
-                                <span>Bệnh án điện tử &amp; chẩn đoán hình ảnh</span>
-                            </li>
-                            <li class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-indigo-600 text-[18px]">biotech</span>
-                                <span>Kho lưu trữ cận lâm sàng &amp; xét nghiệm máu</span>
-                            </li>
-                        </ul>
-                    </div>
-                    <a asp-controller="MedicalRecords" asp-action="Index" class="w-full py-2.5 px-4 rounded-xl bg-slate-50 text-emerald-700 font-label-md font-semibold text-xs flex items-center justify-center gap-2 hover:bg-emerald-700 hover:text-white transition-all text-decoration-none border border-slate-200">
-                        <span>Truy cập chức năng</span>
-                        <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-                    </a>
-                </article>
-            </div>
-
-            <!-- Bottom Row: 2 Balanced Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Module 4: Quản Lý Thành Viên -->
-                <article class="module-card bg-white rounded-2xl p-5 shadow-sm flex flex-col justify-between group">
-                    <div>
-                        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center group-hover:scale-105 transition-transform border border-purple-100 shrink-0">
-                                    <span class="material-symbols-outlined text-[28px]">diversity_1</span>
-                                </div>
-                                <div>
-                                    <h3 class="font-headline-sm text-slate-900 text-base font-bold m-0 group-hover:text-purple-700 transition-colors">
-                                        QUẢN LÝ THÀNH VIÊN
-                                    </h3>
-                                    <p class="font-body-sm text-slate-500 text-xs m-0">Phân quyền giám sát &amp; hồ sơ BHYT</p>
-                                </div>
-                            </div>
-                            <!-- Family Avatar Chips -->
-                            <div class="flex items-center -space-x-2">
-                                @if (Model?.Members != null && Model.Members.Any())
-                                {
-                                    var colors = new[] { "bg-primary", "bg-purple-600", "bg-cyan-600", "bg-teal-600" };
-                                    var idx = 0;
-                                    foreach (var m in Model.Members.Take(4))
-                                    {
-                                        var letter = !string.IsNullOrWhiteSpace(m.FullName) ? m.FullName.Trim().Substring(0, 1).ToUpper() : "T";
-                                        var colorClass = colors[idx % colors.Length];
-                                        <div class="w-8 h-8 rounded-full @colorClass flex items-center justify-center text-white font-bold text-xs shadow-xs border-2 border-white" title="@m.FullName (@m.Relationship)">@letter</div>
-                                        idx++;
-                                    }
-                                }
-                                else
-                                {
-                                    <div class="text-xs text-slate-400 italic">Chưa có thành viên</div>
-                                }
-                            </div>
-                        </div>
-                        <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5 font-body-sm text-slate-600 text-xs list-none p-0">
-                            <li class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-purple-600 text-[18px]">family_restroom</span>
-                                <span>Hồ sơ sức khỏe cả gia đình</span>
-                            </li>
-                            <li class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-purple-600 text-[18px]">badge</span>
-                                <span>Mã BHYT &amp; tiền sử dị ứng thuốc</span>
-                            </li>
-                        </ul>
-                    </div>
-                    <a asp-controller="Members" asp-action="Index" class="w-full py-2.5 px-4 rounded-xl bg-slate-50 text-purple-700 font-label-md font-semibold text-xs flex items-center justify-center gap-2 hover:bg-purple-700 hover:text-white transition-all text-decoration-none border border-slate-200">
-                        <span>Truy cập chức năng</span>
-                        <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-                    </a>
-                </article>
-
-                <!-- Module 5: Theo Dõi Chỉ Số Sinh Hiệu -->
-                <article class="module-card bg-white rounded-2xl p-5 shadow-sm flex flex-col justify-between group">
-                    <div>
-                        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center group-hover:scale-105 transition-transform border border-teal-100 shrink-0">
-                                    <span class="material-symbols-outlined text-[28px]">vital_signs</span>
-                                </div>
-                                <div>
-                                    <h3 class="font-headline-sm text-slate-900 text-base font-bold m-0 group-hover:text-teal-700 transition-colors">
-                                        THEO DÕI CHỈ SỐ SINH HIỆU
-                                    </h3>
-                                    <p class="font-body-sm text-slate-500 text-xs m-0">Telemetry sinh hiệu và cảnh báo sớm</p>
-                                </div>
-                            </div>
-                            <!-- Mini Sparkline visualization -->
-                            <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-                                <svg class="w-16 h-5 text-teal-600" fill="none" viewBox="0 0 100 30">
-                                    <path d="M0 15 L20 15 L30 5 L40 25 L50 15 L60 15 L70 8 L80 18 L100 15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
-                                </svg>
-                                <span class="font-metric-num text-xs font-bold text-teal-700">74 bpm</span>
-                            </div>
-                        </div>
-                        <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5 font-body-sm text-slate-600 text-xs list-none p-0">
-                            <li class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-teal-600 text-[18px]">speed</span>
-                                <span>Huyết áp, đường huyết, SpO2</span>
-                            </li>
-                            <li class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-teal-600 text-[18px]">show_chart</span>
-                                <span>Biểu đồ xu hướng thể trạng tuần/tháng</span>
-                            </li>
-                        </ul>
-                    </div>
-                    <a asp-controller="Members" asp-action="Index" class="w-full py-2.5 px-4 rounded-xl bg-slate-50 text-teal-700 font-label-md font-semibold text-xs flex items-center justify-center gap-2 hover:bg-teal-700 hover:text-white transition-all text-decoration-none border border-slate-200">
-                        <span>Truy cập chức năng</span>
-                        <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-                    </a>
-                </article>
-            </div>
-        </div>
-    </section>
-
-    <!-- 5. BIỂU ĐỒ SỨC KHỎE TỔNG THỂ & DÒNG HOẠT ĐỘNG CHĂM SÓC Y TẾ GẦN ĐÂY -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Biểu Đồ Sức Khỏe Gia Đình (2 Cột) -->
-        <div class="lg:col-span-2 bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
-            <div>
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-sky-100 text-primary flex items-center justify-center shrink-0">
-                            <span class="material-symbols-outlined text-[24px]">analytics</span>
-                        </div>
-                        <div>
-                            <h3 class="font-headline-sm text-slate-900 text-base font-bold m-0">BIỂU ĐỒ SỨC KHỎE TỔNG THỂ (7 NGÀY GẦN NHẤT)</h3>
-                            <p class="font-body-sm text-slate-500 text-xs m-0">Xu hướng huyết áp trung bình &amp; nhịp tim cả gia đình</p>
-                        </div>
-                    </div>
-                    <div class="inline-flex items-center bg-slate-100 p-1 rounded-xl text-xs gap-1 self-start sm:self-auto">
-                        <span class="px-2.5 py-1 rounded-lg bg-white text-slate-900 font-semibold shadow-xs">7 ngày</span>
-                        <span class="px-2.5 py-1 rounded-lg text-slate-500 cursor-pointer hover:text-slate-800">30 ngày</span>
-                    </div>
-                </div>
-
-                <!-- Custom SVG Chart Visualization -->
-                <div class="mt-5 space-y-4">
-                    <div class="flex items-center justify-between text-xs text-slate-500 font-medium">
-                        <div class="flex items-center gap-4">
-                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-sky-600"></span> Huyết áp tâm thu (mmHg)</span>
-                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-cyan-400"></span> Huyết áp tâm trương (mmHg)</span>
-                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Nhịp tim (bpm)</span>
-                        </div>
-                        <span class="text-emerald-700 font-semibold flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[15px]">verified</span> Ổn định
-                        </span>
-                    </div>
-
-                    <!-- Chart Canvas Simulation with SVG -->
-                    <div class="w-full bg-slate-50/70 rounded-2xl p-4 border border-slate-100">
-                        <svg class="w-full h-44 overflow-visible" viewBox="0 0 600 160">
-                            <!-- Horizontal Grid lines -->
-                            <line x1="0" y1="20" x2="600" y2="20" stroke="#E2E8F0" stroke-dasharray="4 4" />
-                            <line x1="0" y1="60" x2="600" y2="60" stroke="#E2E8F0" stroke-dasharray="4 4" />
-                            <line x1="0" y1="100" x2="600" y2="100" stroke="#E2E8F0" stroke-dasharray="4 4" />
-                            <line x1="0" y1="140" x2="600" y2="140" stroke="#CBD5E1" stroke-width="1.5" />
-
-                            <!-- Systolic Area & Line (Sky Blue) -->
-                            <path d="M 30,55 Q 115,48 200,52 T 370,45 T 550,48 L 550,140 L 30,140 Z" fill="rgba(2, 132, 199, 0.08)" />
-                            <path d="M 30,55 Q 115,48 200,52 T 370,45 T 550,48" fill="none" stroke="#0284C7" stroke-width="3" stroke-linecap="round" />
-
-                            <!-- Diastolic Line (Cyan) -->
-                            <path d="M 30,90 Q 115,86 200,88 T 370,82 T 550,85" fill="none" stroke="#06B6D4" stroke-width="2.5" stroke-linecap="round" />
-
-                            <!-- Heart Rate Line (Emerald) -->
-                            <path d="M 30,105 Q 115,102 200,108 T 370,100 T 550,103" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 2" />
-
-                            <!-- Data Points on 7 days -->
-                            <circle cx="30" cy="55" r="4" fill="#0284C7" stroke="#fff" stroke-width="2" />
-                            <circle cx="115" cy="48" r="4" fill="#0284C7" stroke="#fff" stroke-width="2" />
-                            <circle cx="200" cy="52" r="4" fill="#0284C7" stroke="#fff" stroke-width="2" />
-                            <circle cx="285" cy="45" r="4" fill="#0284C7" stroke="#fff" stroke-width="2" />
-                            <circle cx="370" cy="48" r="4" fill="#0284C7" stroke="#fff" stroke-width="2" />
-                            <circle cx="455" cy="44" r="4" fill="#0284C7" stroke="#fff" stroke-width="2" />
-                            <circle cx="550" cy="48" r="5" fill="#0284C7" stroke="#fff" stroke-width="2" />
-                        </svg>
-
-                        <!-- Day Labels -->
-                        <div class="flex justify-between text-[11px] text-slate-500 font-semibold px-2 mt-2">
-                            <span>T.Sáu (09)</span>
-                            <span>T.Bảy (10)</span>
-                            <span>C.Nhật (11)</span>
-                            <span>T.Hai (12)</span>
-                            <span>T.Ba (13)</span>
-                            <span>T.Tư (14)</span>
-                            <span class="text-primary font-bold">Hôm nay (15)</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-4 pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
-                <span>Dữ liệu đo tự động đồng bộ từ thiết bị đo Omron &amp; Apple Health.</span>
-                <a asp-controller="Members" asp-action="Index" class="text-primary font-semibold hover:underline flex items-center gap-1 text-decoration-none">
-                    <span>Xem báo cáo phân tích chi tiết</span>
-                    <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
-                </a>
-            </div>
-        </div>
-
-        <!-- Dòng Hoạt Động Chăm Sóc Y Tế Gần Đây (1 Cột) -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
-            <div>
-                <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
-                            <span class="material-symbols-outlined text-[20px]">notifications_active</span>
-                        </div>
-                        <div>
-                            <h3 class="font-headline-sm text-slate-900 text-base font-bold m-0">LỊCH TRÌNH &amp; HOẠT ĐỘNG</h3>
-                            <span class="font-label-sm text-slate-500 text-xs">Cập nhật trong ngày</span>
-                        </div>
-                    </div>
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" title="Đang trực tuyến"></span>
-                </div>
-
-                <div class="space-y-3">
-                    @if (Model != null && (Model.TodayDosesTotal > 0 || Model.UpcomingAppointmentsCount > 0 || !string.IsNullOrEmpty(Model.LatestBloodPressure) || Model.TotalMedicalRecords > 0))
+        @if (Model?.MembersSummary != null && Model.MembersSummary.Any())
+        {
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                @foreach (var m in Model.MembersSummary)
+                {
+                    var statusColor = m.VitalStatus switch
                     {
-                        @if (Model.TodayDosesTotal > 0)
-                        {
-                            <div class="activity-item p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                                    <span class="material-symbols-outlined text-[16px]">done_all</span>
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <div class="flex items-center justify-between gap-1">
-                                        <span class="font-title-md text-slate-900 text-xs font-bold truncate">Tiến độ uống thuốc hôm nay</span>
-                                        <span class="font-label-sm text-emerald-700 text-[11px] font-semibold shrink-0">@Model.TodayDosesTaken/@Model.TodayDosesTotal liều</span>
-                                    </div>
-                                    <p class="font-body-sm text-slate-500 text-[11px] m-0">Đã uống @Model.DoseProgressPercent% các cữ thuốc trong ngày</p>
-                                </div>
-                            </div>
-                        }
+                        "Bình thường" => "bg-emerald-100 text-emerald-800 border-emerald-200",
+                        "Cần theo dõi" => "bg-amber-100 text-amber-800 border-amber-200",
+                        _ => "bg-slate-100 text-slate-600 border-slate-200"
+                    };
 
-                        @if (Model.UpcomingAppointmentsCount > 0 && !string.IsNullOrEmpty(Model.NextAppointmentSummary))
-                        {
-                            <div class="activity-item p-3 rounded-xl bg-amber-50/70 border border-amber-100 flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
-                                    <span class="material-symbols-outlined text-[16px]">calendar_today</span>
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <div class="flex items-center justify-between gap-1">
-                                        <span class="font-title-md text-slate-900 text-xs font-bold truncate">@Model.NextAppointmentSummary</span>
-                                        <span class="font-label-sm text-amber-800 text-[11px] font-semibold shrink-0">@(Model.DaysUntilNextAppointment == 0 ? "Hôm nay" : $"Còn {Model.DaysUntilNextAppointment} ngày")</span>
-                                    </div>
-                                    <p class="font-body-sm text-slate-600 text-[11px] m-0">@(Model.NextAppointmentMember ?? "Thành viên gia đình")</p>
-                                </div>
-                            </div>
-                        }
+                    var initialLetter = !string.IsNullOrWhiteSpace(m.FullName) ? m.FullName.Trim().Substring(0, 1).ToUpper() : "T";
 
-                        @if (!string.IsNullOrEmpty(Model.LatestBloodPressure))
-                        {
-                            <div class="activity-item p-3 rounded-xl bg-sky-50/60 border border-sky-100 flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-full bg-sky-100 text-primary flex items-center justify-center shrink-0 mt-0.5">
-                                    <span class="material-symbols-outlined text-[16px]">monitor_heart</span>
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <div class="flex items-center justify-between gap-1">
-                                        <span class="font-title-md text-slate-900 text-xs font-bold truncate">Huyết áp gần nhất: @Model.LatestBloodPressure mmHg</span>
-                                        <span class="font-label-sm text-slate-400 text-[11px] shrink-0">Vừa đo</span>
+                    <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-slate-300 transition-all flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-start justify-between gap-2 pb-3 border-b border-slate-200/60">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shrink-0">
+                                        @initialLetter
                                     </div>
-                                    <p class="font-body-sm text-slate-500 text-[11px] m-0">@(Model.LatestVitalsMember ?? "Thành viên") • @(Model.HasAbnormalVitals ? "Cần chú ý theo dõi" : "Chỉ số ổn định")</p>
+                                    <div class="min-w-0">
+                                        <h4 class="font-title-md text-slate-900 text-sm font-bold m-0 truncate">@m.FullName</h4>
+                                        <span class="text-xs text-slate-500 font-medium">@m.Relationship</span>
+                                    </div>
                                 </div>
+                                <span class="px-2 py-0.5 rounded-full font-bold text-[10px] border shrink-0 @statusColor">
+                                    @m.VitalStatus
+                                </span>
                             </div>
-                        }
 
-                        @if (Model.TotalMedicalRecords > 0)
-                        {
-                            <div class="activity-item p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 mt-0.5">
-                                    <span class="material-symbols-outlined text-[16px]">biotech</span>
+                            <div class="grid grid-cols-2 gap-2.5 py-3">
+                                <div class="p-2.5 rounded-xl bg-white border border-slate-100">
+                                    <span class="text-[11px] text-slate-400 block font-medium">Huyết áp</span>
+                                    <span class="font-bold text-slate-900 text-sm">
+                                        @(m.LatestSystolic.HasValue ? $"{m.LatestSystolic}/{m.LatestDiastolic}" : "--/--")
+                                    </span>
+                                    <span class="text-[10px] text-slate-400 block">mmHg</span>
                                 </div>
-                                <div class="min-w-0 flex-1">
-                                    <div class="flex items-center justify-between gap-1">
-                                        <span class="font-title-md text-slate-900 text-xs font-bold truncate">Hồ sơ y bạ lưu trữ</span>
-                                        <span class="font-label-sm text-slate-400 text-[11px] shrink-0">@Model.TotalMedicalRecords hồ sơ</span>
-                                    </div>
-                                    <p class="font-body-sm text-slate-500 text-[11px] m-0">@(Model.LatestHospital ?? "Đồng bộ từ cơ sở y tế") • @Model.TotalAttachments tệp đính kèm</p>
+                                <div class="p-2.5 rounded-xl bg-white border border-slate-100">
+                                    <span class="text-[11px] text-slate-400 block font-medium">Nhịp tim</span>
+                                    <span class="font-bold text-slate-900 text-sm">
+                                        @(m.LatestHeartRate.HasValue ? $"{m.LatestHeartRate}" : "--")
+                                    </span>
+                                    <span class="text-[10px] text-slate-400 block">BPM</span>
                                 </div>
                             </div>
-                        }
-                    }
-                    else
-                    {
-                        <div class="py-8 px-4 text-center rounded-xl bg-slate-50 border border-dashed border-slate-200">
-                            <span class="material-symbols-outlined text-slate-300 text-[36px] mb-1">event_busy</span>
-                            <p class="font-title-md text-slate-700 text-xs font-bold mb-1">Chưa có hoạt động y tế nào</p>
-                            <p class="font-body-sm text-slate-400 text-[11px] mb-0">Khi bạn thêm đơn thuốc, đo chỉ số sinh hiệu hoặc đặt lịch khám, lịch trình sẽ hiển thị tại đây.</p>
                         </div>
-                    }
-                </div>
-            </div>
 
-            <div class="mt-4 pt-3 border-t border-slate-100 text-center">
-                <a asp-controller="Prescriptions" asp-action="Index" class="font-label-sm text-primary hover:underline font-semibold text-xs text-decoration-none">
-                    Xem tất cả lịch nhắc trong tuần →
-                </a>
+                        <div class="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
+                            <span>Lần đo: @(m.LastMeasuredAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa đo")</span>
+                            <a asp-controller="Members" asp-action="Index" class="text-primary font-semibold hover:underline">
+                                Đo ngay →
+                            </a>
+                        </div>
+                    </div>
+                }
             </div>
-        </div>
+        }
+        else
+        {
+            <div class="py-8 text-center text-slate-400 text-xs">
+                Chưa có thành viên nào trong gia đình. Vui lòng thêm thành viên tại mục Quản lý thành viên.
+            </div>
+        }
     </div>
 
     <!-- 6. CỤM LỐI TẮT NHANH TỚI CÁC CHỨC NĂNG CHÍNH (QUICK SHORTCUT BAR) -->
@@ -640,7 +522,7 @@
         <div class="flex flex-wrap items-center gap-2">
             <a asp-controller="Prescriptions" asp-action="Index" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 text-xs font-semibold shadow-xs border border-slate-200 flex items-center gap-1.5 transition-all text-decoration-none">
                 <span class="material-symbols-outlined text-[16px] text-primary">add_circle</span>
-                <span>+ Thêm đơn thuốc</span>
+                <span>+ Kê đơn thuốc</span>
             </a>
             <a asp-controller="Appointments" asp-action="Index" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 text-xs font-semibold shadow-xs border border-slate-200 flex items-center gap-1.5 transition-all text-decoration-none">
                 <span class="material-symbols-outlined text-[16px] text-secondary">calendar_add_on</span>
@@ -648,7 +530,7 @@
             </a>
             <a asp-controller="MedicalRecords" asp-action="Index" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 text-xs font-semibold shadow-xs border border-slate-200 flex items-center gap-1.5 transition-all text-decoration-none">
                 <span class="material-symbols-outlined text-[16px] text-emerald-700">upload_file</span>
-                <span>+ Tải lên hồ sơ EMR</span>
+                <span>+ Tải hồ sơ EMR</span>
             </a>
             <a asp-controller="Members" asp-action="Index" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 text-xs font-semibold shadow-xs border border-slate-200 flex items-center gap-1.5 transition-all text-decoration-none">
                 <span class="material-symbols-outlined text-[16px] text-purple-700">person_add</span>
@@ -662,75 +544,7 @@
 <!-- MODALS & TOAST NOTIFICATIONS                                             -->
 <!-- ========================================================================= -->
 
-<!-- Modal 1: Đo Chỉ Số Sinh Hiệu Nhanh -->
-<div id="quickVitalsModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl modal-fade-in border border-slate-100">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-cyan-100 text-cyan-800 flex items-center justify-center">
-                    <span class="material-symbols-outlined text-[20px]">monitor_heart</span>
-                </div>
-                <h3 class="font-headline-sm text-slate-900 text-lg font-bold m-0">Đo Chỉ Số Nhanh</h3>
-            </div>
-            <button onclick="closeModal('quickVitalsModal')" class="text-slate-400 hover:text-slate-600 border-0 bg-transparent cursor-pointer">
-                <span class="material-symbols-outlined text-[22px]">close</span>
-            </button>
-        </div>
-
-        <form id="quickVitalsForm" onsubmit="handleQuickVitalsSubmit(event)" class="mt-4 space-y-4">
-            <div>
-                <label class="block font-label-sm text-slate-700 font-semibold mb-1">Thành viên đo *</label>
-                <select id="vitalMemberSelect" required class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary text-sm outline-none bg-white">
-                    @if (Model?.Members != null && Model.Members.Any())
-                    {
-                        foreach (var m in Model.Members)
-                        {
-                            var age = DateTime.Today.Year - m.DateOfBirth.Year;
-                            <option value="@m.FullName">@m.FullName (@m.Relationship - @(age)t)</option>
-                        }
-                    }
-                    else
-                    {
-                        <option value="">Chưa có thành viên nào</option>
-                    }
-                </select>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block font-label-sm text-slate-700 font-semibold mb-1">Huyết áp (mmHg) *</label>
-                    <input type="text" placeholder="120/80" required class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary text-sm outline-none" />
-                </div>
-                <div>
-                    <label class="block font-label-sm text-slate-700 font-semibold mb-1">Nhịp tim (BPM) *</label>
-                    <input type="number" placeholder="75" required class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary text-sm outline-none" />
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block font-label-sm text-slate-700 font-semibold mb-1">Nồng độ SpO2 (%)</label>
-                    <input type="number" placeholder="98" min="80" max="100" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary text-sm outline-none" />
-                </div>
-                <div>
-                    <label class="block font-label-sm text-slate-700 font-semibold mb-1">Đường huyết (mg/dL)</label>
-                    <input type="number" step="0.1" placeholder="105" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary text-sm outline-none" />
-                </div>
-            </div>
-
-            <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-                <button type="button" onclick="closeModal('quickVitalsModal')" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-label-md hover:bg-slate-200 transition-colors border-0 cursor-pointer text-xs font-semibold">
-                    Hủy bỏ
-                </button>
-                <button type="submit" class="px-4 py-2 rounded-xl bg-primary text-white font-label-md hover:bg-primary-container transition-colors border-0 cursor-pointer text-xs font-semibold shadow-sm">
-                    Lưu chỉ số &amp; Phân tích
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Modal 2: SOS Y Tế Khẩn Cấp -->
+<!-- Modal: SOS Y Tế Khẩn Cấp -->
 <div id="sosEmergencyModal" class="fixed inset-0 z-50 hidden bg-rose-950/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl modal-fade-in border-2 border-rose-500">
         <div class="flex items-center justify-between pb-3 border-b border-rose-100">
@@ -817,13 +631,80 @@
             }
         }
 
-        function handleQuickVitalsSubmit(e) {
-            e.preventDefault();
-            const member = document.getElementById('vitalMemberSelect').value;
-            closeModal('quickVitalsModal');
-            showToast(`Đã lưu chỉ số sinh hiệu thành công cho ${member}! Dữ liệu đã đồng bộ vào hồ sơ.`, 'success');
+        // Quick Mark As Taken via AJAX on Dashboard
+        async function quickMarkTaken(scheduleId, drugName, memberName) {
+            const btn = document.getElementById(`home-btn-${scheduleId}`);
+            const item = document.getElementById(`home-sched-${scheduleId}`);
+            const title = document.getElementById(`home-sched-title-${scheduleId}`);
+            const container = document.getElementById(`home-sched-btn-container-${scheduleId}`);
+
+            if (btn) btn.disabled = true;
+
+            try {
+                const response = await fetch(`/Prescriptions/MarkAsTaken/${scheduleId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) throw new Error('Không thể kết nối đến máy chủ.');
+                const data = await response.json();
+
+                if (data.success) {
+                    if (item) {
+                        item.classList.add('bg-slate-50', 'border-emerald-200', 'opacity-90');
+                        item.classList.remove('bg-white', 'border-slate-200');
+                    }
+                    if (title) {
+                        title.classList.add('line-through', 'text-slate-400');
+                    }
+                    if (container) {
+                        container.innerHTML = `
+                            <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 font-label-md font-semibold text-xs border border-emerald-200">
+                                <span class="material-symbols-outlined text-[16px]">done_all</span>
+                                <span>Đã uống ${data.takenAt || 'vừa xong'}</span>
+                            </span>
+                        `;
+                    }
+
+                    // Dynamically decrease pending count in widgets
+                    updateDashboardDoseCounts();
+                    showToast(`Đã ghi nhận uống thuốc "${drugName}" cho ${memberName}!`, 'success');
+                } else {
+                    showToast(data.message || 'Lỗi khi cập nhật cữ thuốc.', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Không thể cập nhật cữ thuốc.', 'error');
+            } finally {
+                if (btn) btn.disabled = false;
+            }
         }
 
+        function updateDashboardDoseCounts() {
+            const allDoses = document.querySelectorAll('[id^="home-sched-"]');
+            const takenDoses = document.querySelectorAll('[id^="home-sched-"][class*="border-emerald-200"]');
+            const total = allDoses.length;
+            const taken = takenDoses.length;
+            const pending = Math.max(0, total - taken);
+            const pct = total > 0 ? Math.round((taken / total) * 100) : 0;
+
+            const badge = document.getElementById('statPendingBadge');
+            const ratio = document.getElementById('statDosesRatio');
+            const pbar = document.getElementById('statDoseProgressBar');
+            const ptext = document.getElementById('statDosePercentText');
+            const banner = document.getElementById('bannerPendingCount');
+
+            if (badge) badge.innerText = `Còn ${pending} cữ`;
+            if (ratio) ratio.innerText = `Đã uống ${taken}/${total}`;
+            if (pbar) pbar.style.width = `${pct}%`;
+            if (ptext) ptext.innerText = `Tiến độ ngày: ${pct}%`;
+            if (banner) banner.innerText = `${pending} cữ thuốc cần uống`;
+        }
+
+        // Toast notification system
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             if (!container) return;
