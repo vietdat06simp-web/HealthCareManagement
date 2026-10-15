@@ -1,7 +1,19 @@
 @model HealthCareManagement.Web.Models.ViewModels.PrescriptionsIndexViewModel
 @{
-    ViewData["Title"] = "Nhắc Uống Thuốc & Lịch Tái Khám";
-    var activeTab = (ViewBag.ActiveTab as string) ?? "medications";
+    ViewData["Title"] = "Nhắc Uống Thuốc & Kế Hoạch Điều Trị";
+    var activeTab = (ViewBag.ActiveTab as string) ?? Model?.ActiveTab ?? "medications";
+    var today = DateTime.Today;
+    var viCulture = new System.Globalization.CultureInfo("vi-VN");
+    var todayFormatted = today.ToString("dddd, dd/MM/yyyy", viCulture);
+
+    var morningDoses = Model?.MorningSchedules ?? new();
+    var noonDoses = Model?.NoonSchedules ?? new();
+    var afternoonDoses = Model?.AfternoonSchedules ?? new();
+    var eveningDoses = Model?.EveningSchedules ?? new();
+
+    var totalToday = Model?.TodaySchedules?.Count ?? 0;
+    var takenToday = Model?.TodaySchedules?.Count(s => s.IsTaken) ?? 0;
+    var progressPercent = totalToday > 0 ? (int)Math.Round((double)takenToday / totalToday * 100) : 0;
 }
 
 @section Styles {
@@ -69,6 +81,32 @@
 }
 
 <div class="flex flex-col w-full gap-5 pb-8">
+    <!-- Feedback Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-emerald-600">check_circle</span>
+                <span>@TempData["SuccessMessage"]</span>
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" class="text-emerald-500 hover:text-emerald-700 border-0 bg-transparent cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-semibold flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-rose-600">error</span>
+                <span>@TempData["ErrorMessage"]</span>
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700 border-0 bg-transparent cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+    }
+
     <!-- 1. TOP BREADCRUMB & REALTIME SYNC BADGE -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
         <nav aria-label="Breadcrumb" class="flex items-center gap-1.5 font-label-md text-slate-500 overflow-x-auto whitespace-nowrap py-1">
@@ -79,7 +117,7 @@
             <span class="text-slate-300">/</span>
             <span class="text-slate-600 font-medium">Kế hoạch điều trị</span>
             <span class="text-slate-300">/</span>
-            <span class="text-primary font-semibold">Lịch uống thuốc &amp; Hẹn tái khám</span>
+            <span class="text-primary font-semibold">Đơn thuốc &amp; Nhắc uống thuốc</span>
         </nav>
 
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-high text-tertiary font-label-sm shadow-xs self-start sm:self-auto flex-shrink-0">
@@ -87,8 +125,8 @@
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-tertiary"></span>
             </span>
-            <span class="font-semibold text-slate-800">Đồng bộ chuông thông báo đẩy 24/7</span>
-            <span class="text-[11px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold uppercase tracking-wider">BẬT (Zalo &amp; SMS)</span>
+            <span class="font-semibold text-slate-800">Đồng bộ chuông thông báo nhắc nhở 24/7</span>
+            <span class="text-[11px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold uppercase tracking-wider">ĐANG BẬT</span>
         </div>
     </div>
 
@@ -101,14 +139,14 @@
             <div>
                 <div class="flex items-center gap-2.5 flex-wrap">
                     <h1 class="font-headline-md text-slate-900 tracking-tight m-0 text-xl md:text-2xl font-bold">
-                        LỊCH NHẮC UỐNG THUỐC &amp; TÁI KHÁM
+                        LỊCH NHẮC UỐNG THUỐC &amp; ĐƠN THUỐC
                     </h1>
-                    <span class="px-2.5 py-0.5 rounded-full bg-cyan-50 text-cyan-700 font-label-sm font-semibold border border-cyan-200">
-                        Hôm nay: Thứ Năm, 15/10/2026
+                    <span class="px-2.5 py-0.5 rounded-full bg-cyan-50 text-cyan-700 font-label-sm font-semibold border border-cyan-200 capitalize">
+                        Hôm nay: @todayFormatted
                     </span>
                 </div>
                 <p class="font-body-md text-slate-500 mt-1 mb-0">
-                    Quản lý cữ thuốc hàng ngày và theo dõi chính xác các mốc tái khám, tiêm chủng định kỳ cho cả gia đình.
+                    Theo dõi 4 cữ thuốc hàng ngày và quản lý đơn thuốc điều trị cho toàn bộ các thành viên trong gia đình.
                 </p>
             </div>
         </div>
@@ -116,14 +154,11 @@
         <div class="flex items-center gap-2.5 flex-wrap shrink-0">
             <button onclick="openModal('addPrescriptionModal')" class="btn-action-primary inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white font-label-md shadow-sm hover:bg-primary-container transition-all cursor-pointer border-0">
                 <span class="material-symbols-outlined text-[20px]">add_circle</span>
-                <span>+ Thêm đơn thuốc mới</span>
+                <span>+ Kê đơn thuốc mới</span>
             </button>
-            <button onclick="openModal('addAppointmentModal')" class="btn-action-secondary inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-secondary text-white font-label-md shadow-sm hover:bg-cyan-800 transition-all cursor-pointer border-0">
-                <span class="material-symbols-outlined text-[20px]">calendar_add_on</span>
-                <span>+ Đặt lịch tái khám</span>
-            </button>
-            <button onclick="toggleFilterDrawer()" aria-label="Bộ lọc thành viên" class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:text-primary hover:bg-slate-200 transition-colors border-0 cursor-pointer" title="Lọc thành viên">
-                <span class="material-symbols-outlined text-[20px]">tune</span>
+            <button onclick="switchViewTab('appointments')" class="btn-action-secondary inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-secondary text-white font-label-md shadow-sm hover:bg-cyan-800 transition-all cursor-pointer border-0">
+                <span class="material-symbols-outlined text-[20px]">calendar_month</span>
+                <span>Lịch hẹn tái khám</span>
             </button>
         </div>
     </div>
@@ -137,16 +172,21 @@
                 <span class="font-semibold">Lịch uống thuốc hôm nay</span>
                 <span id="pendingDoseBadge" class="px-2 py-0.2 rounded-full bg-amber-100 text-amber-800 font-bold text-xs">@(Model?.TodaySchedules?.Count(s => !s.IsTaken) ?? 0) cữ còn</span>
             </button>
+            <button id="tabBtnPrescriptions" onclick="switchViewTab('prescriptions')" class="view-tab-btn @(activeTab == "prescriptions" ? "active" : "") px-4 py-2 rounded-lg font-label-md text-slate-700 flex items-center gap-2 cursor-pointer border-0 bg-transparent">
+                <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+                <span class="font-semibold">Đơn thuốc điều trị</span>
+                <span class="px-2 py-0.2 rounded-full bg-sky-100 text-[#0284C7] font-bold text-xs">@(Model?.ActivePrescriptions?.Count ?? 0) đơn</span>
+            </button>
             <button id="tabBtnAppointments" onclick="switchViewTab('appointments')" class="view-tab-btn @(activeTab == "appointments" ? "active" : "") px-4 py-2 rounded-lg font-label-md text-slate-700 flex items-center gap-2 cursor-pointer border-0 bg-transparent">
                 <span class="material-symbols-outlined text-[18px]">event_upcoming</span>
-                <span class="font-semibold">Lịch hẹn tái khám sắp tới</span>
+                <span class="font-semibold">Lịch hẹn tái khám</span>
                 <span class="px-2 py-0.2 rounded-full bg-cyan-100 text-cyan-800 font-bold text-xs">@(Model?.UpcomingAppointments?.Count ?? 0) lịch</span>
             </button>
         </div>
 
         <!-- Member Quick Filter -->
         <div class="flex items-center gap-2 px-2 overflow-x-auto">
-            <span class="font-label-sm text-slate-500 uppercase tracking-wider shrink-0">Thành viên:</span>
+            <span class="font-label-sm text-slate-500 uppercase tracking-wider shrink-0 text-xs">Lọc theo:</span>
             <div class="flex items-center gap-1.5 flex-wrap">
                 <button onclick="filterByMember('all')" class="member-filter-chip active px-3 py-1 rounded-full text-xs font-semibold bg-white text-primary border border-primary shadow-xs cursor-pointer">
                     Tất cả (@(Model?.Members?.Count ?? 0))
@@ -164,7 +204,7 @@
         </div>
     </div>
 
-    <!-- 4. TAB CONTENT 1: LỊCH UỐNG THUỐC HÔM NAY -->
+    <!-- 4. TAB CONTENT 1: LỊCH UỐNG THUỐC HÔM NAY (4 CỮ: SÁNG, TRƯA, CHIỀU, TỐI) -->
     <div id="tabContentMedications" class="@(activeTab == "medications" ? "block" : "hidden") space-y-6">
         <!-- Dose Progress Bar & Overview -->
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
@@ -174,216 +214,512 @@
                 </div>
                 <div>
                     <div class="font-headline-sm text-slate-900 text-base md:text-lg font-bold">CÁC CỮ THUỐC TRONG NGÀY HÔM NAY</div>
-                    <div class="font-label-md text-slate-500">Chia rõ 3 khung giờ: Sáng (07:00 - 08:00), Trưa (11:30 - 12:30), Tối (20:00)</div>
+                    <div class="font-label-md text-slate-500 text-xs sm:text-sm">Phân chia rõ 4 khung giờ: Sáng (08:00), Trưa (12:00), Chiều (17:30), Tối (20:30)</div>
                 </div>
             </div>
 
             <!-- Progress Metric -->
             <div class="flex items-center gap-4 bg-surface-container-low px-4 py-2.5 rounded-xl border border-slate-200/60 self-start lg:self-auto">
                 <div class="flex flex-col text-right">
-                    <span class="font-label-sm text-slate-500">Tiến độ cữ thuốc hôm nay</span>
-                    <span id="doseProgressText" class="font-title-md text-tertiary font-bold">Đã uống @(Model?.TodaySchedules?.Count(s => s.IsTaken) ?? 0)/@(Model?.TodaySchedules?.Count ?? 0) liều</span>
+                    <span class="font-label-sm text-slate-500 text-xs">Tiến độ cữ thuốc hôm nay</span>
+                    <span id="doseProgressText" class="font-title-md text-tertiary font-bold text-sm">Đã uống @takenToday/@totalToday liều</span>
                 </div>
-                <div class="w-32 sm:w-40 h-3 bg-slate-200 rounded-full overflow-hidden">
-                    @{
-                        var totalD = Model?.TodaySchedules?.Count ?? 0;
-                        var takenD = Model?.TodaySchedules?.Count(s => s.IsTaken) ?? 0;
-                        var pct = totalD > 0 ? (int)Math.Round((double)takenD / totalD * 100) : 0;
-                    }
-                    <div id="doseProgressBar" class="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full transition-all duration-500" style="width: @(pct)%;"></div>
+                <div class="w-28 sm:w-36 h-3 bg-slate-200 rounded-full overflow-hidden">
+                    <div id="doseProgressBar" class="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full transition-all duration-500" style="width: @(progressPercent)%;"></div>
                 </div>
-                <span id="doseProgressPercent" class="font-metric-num text-sm text-primary font-bold">@(pct)%</span>
+                <span id="doseProgressPercent" class="font-metric-num text-sm text-primary font-bold">@(progressPercent)%</span>
             </div>
         </div>
 
-        <!-- 3 Dose Blocks Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            @if (Model?.TodaySchedules != null && Model.TodaySchedules.Any())
-            {
-                var morningDoses = Model.TodaySchedules.Where(s => s.PrescriptionDose.TimeOfDay == "Sáng" || s.PrescriptionDose.DoseTime < TimeSpan.FromHours(11)).ToList();
-                var noonDoses = Model.TodaySchedules.Where(s => s.PrescriptionDose.TimeOfDay == "Trưa" || (s.PrescriptionDose.DoseTime >= TimeSpan.FromHours(11) && s.PrescriptionDose.DoseTime < TimeSpan.FromHours(17))).ToList();
-                var eveningDoses = Model.TodaySchedules.Where(s => s.PrescriptionDose.TimeOfDay == "Tối" || s.PrescriptionDose.TimeOfDay == "Đêm" || s.PrescriptionDose.DoseTime >= TimeSpan.FromHours(17)).ToList();
-
-                <!-- CỮ SÁNG -->
-                <div class="dose-card rounded-2xl bg-white p-5 shadow-sm flex flex-col justify-between" data-dose-slot="morning">
+        @if (totalToday == 0)
+        {
+            <!-- EMPTY STATE: HÔM NAY KHÔNG CÓ LỊCH UỐNG THUỐC -->
+            <div class="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center shadow-xs">
+                <div class="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 border border-amber-100 shadow-inner">
+                    <span class="material-symbols-outlined text-[36px]">medication</span>
+                </div>
+                <h3 class="text-base font-bold text-slate-900 mb-1">Hôm nay không có lịch uống thuốc</h3>
+                <p class="text-xs text-slate-500 max-w-md mx-auto mb-6">Tất cả thành viên trong tổ ấm hiện không có cữ thuốc nào cần uống trong ngày hôm nay.</p>
+                <button onclick="openModal('addPrescriptionModal')" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-xs sm:text-sm font-semibold hover:bg-sky-600 shadow-md shadow-sky-600/20 transition-all border-0 cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                    <span>+ Kê đơn thuốc mới</span>
+                </button>
+            </div>
+        }
+        else
+        {
+            <!-- 4 DOSE BLOCKS GRID: SÁNG, TRƯA, CHIỀU, TỐI -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                
+                <!-- 1. CỮ SÁNG -->
+                <div class="dose-card rounded-2xl bg-white p-4 shadow-sm border border-slate-200/80 flex flex-col justify-between" data-dose-slot="morning">
                     <div>
-                        <div class="flex items-center justify-between pb-3 mb-4 bg-amber-50/80 -mx-5 -mt-5 p-4 rounded-t-2xl border-b border-amber-100">
+                        <div class="flex items-center justify-between pb-3 mb-3 bg-amber-50/90 -mx-4 -mt-4 p-3.5 rounded-t-2xl border-b border-amber-100">
                             <div class="flex items-center gap-2 text-amber-700">
-                                <span class="material-symbols-outlined text-[26px]">wb_sunny</span>
+                                <span class="material-symbols-outlined text-[24px]">wb_sunny</span>
                                 <div>
-                                    <span class="font-title-md text-slate-900 block leading-tight font-bold">CỮ SÁNG</span>
-                                    <span class="font-label-sm text-amber-800 font-medium">07:00 - 09:00 Sáng</span>
+                                    <span class="font-title-md text-slate-900 block leading-tight font-bold text-sm">CỮ SÁNG</span>
+                                    <span class="font-label-sm text-amber-800 font-medium text-xs">07:00 - 09:00 Sáng</span>
                                 </div>
                             </div>
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full @(morningDoses.All(d => d.IsTaken) && morningDoses.Any() ? "bg-emerald-100 text-emerald-800 border-emerald-200" : "bg-amber-100 text-amber-800 border-amber-200") font-label-sm font-semibold text-xs border">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full @(morningDoses.All(d => d.IsTaken) && morningDoses.Any() ? "bg-emerald-100 text-emerald-800 border-emerald-200" : "bg-amber-100 text-amber-800 border-amber-200") font-label-sm font-semibold text-[11px] border">
                                 @(morningDoses.All(d => d.IsTaken) && morningDoses.Any() ? "Hoàn thành" : $"{morningDoses.Count(d => !d.IsTaken)} chưa uống")
                             </span>
                         </div>
-                        <div class="flex flex-col gap-3">
+
+                        <div class="flex flex-col gap-2.5">
                             @if (morningDoses.Any())
                             {
                                 foreach (var s in morningDoses)
                                 {
-                                    <div class="dose-item @(s.IsTaken ? "completed" : "") p-3 rounded-xl bg-slate-50 flex flex-col gap-1.5" data-member="@(s.PrescriptionDose?.PrescriptionItem?.Prescription?.Member?.FullName ?? "")">
+                                    var med = s.PrescriptionDose?.PrescriptionItem;
+                                    var mem = med?.Prescription?.Member;
+                                    var medName = med?.MedicineName ?? "Thuốc";
+                                    var memName = mem?.FullName ?? "Thành viên";
+
+                                    <div id="schedule-item-@s.Id" class="dose-item @(s.IsTaken ? "completed bg-slate-50 border-emerald-200 opacity-90" : "bg-white border-slate-200 shadow-2xs hover:border-sky-300") p-3 rounded-xl border flex flex-col gap-2 transition-all" data-member="@memName">
                                         <div class="flex items-start justify-between gap-2">
-                                            <div>
-                                                <h4 class="font-title-md text-slate-900 text-sm font-bold m-0">@(s.PrescriptionDose?.PrescriptionItem?.MedicineName ?? "Thuốc")</h4>
-                                                <span class="font-label-sm text-slate-600 font-medium">@(s.PrescriptionDose?.PrescriptionItem?.DosagePerTime ?? "1 liều") • Thành viên: <strong class="text-slate-800">@(s.PrescriptionDose?.PrescriptionItem?.Prescription?.Member?.FullName ?? "Thành viên")</strong></span>
+                                            <div class="min-w-0 flex-1">
+                                                <h4 id="schedule-title-@s.Id" class="font-title-md text-slate-900 text-sm font-bold m-0 truncate @(s.IsTaken ? "line-through text-slate-400" : "")">
+                                                    @medName
+                                                </h4>
+                                                <div class="font-label-sm text-slate-600 text-xs mt-0.5">
+                                                    <span class="font-medium text-slate-700">@(med?.DosagePerTime ?? "1 liều")</span>
+                                                    <span class="text-slate-300 mx-1">•</span>
+                                                    <span class="text-slate-500">Thành viên:</span>
+                                                    <strong class="text-slate-800">@memName</strong>
+                                                </div>
                                             </div>
-                                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full @(s.IsTaken ? "bg-tertiary text-white" : "bg-slate-200 text-slate-600") text-[14px] shrink-0">
-                                                <span class="material-symbols-outlined text-[16px]">@(s.IsTaken ? "check" : "schedule")</span>
-                                            </span>
+
+                                            <button type="button" 
+                                                    id="btn-taken-@s.Id"
+                                                    onclick="toggleMarkAsTaken(@s.Id, '@medName', '@memName')"
+                                                    class="w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer border-0 shrink-0 @(s.IsTaken ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200")"
+                                                    title="@(s.IsTaken ? "Bấm để chuyển về chưa uống" : "Bấm để đánh dấu ĐÃ UỐNG")">
+                                                <span class="material-symbols-outlined text-[17px]">@(s.IsTaken ? "check_circle" : "radio_button_unchecked")</span>
+                                            </button>
                                         </div>
-                                        @if (!string.IsNullOrEmpty(s.PrescriptionDose?.PrescriptionItem?.MealTiming))
+
+                                        @if (!string.IsNullOrEmpty(med?.MealTiming) || !string.IsNullOrEmpty(med?.SpecialInstruction))
                                         {
-                                            <p class="font-body-sm text-slate-500 italic m-0 bg-white/80 p-1.5 rounded-lg border border-slate-100">
-                                                “@s.PrescriptionDose.PrescriptionItem.MealTiming”
-                                            </p>
-                                        }
-                                        @if (s.IsTaken)
-                                        {
-                                            <div class="mt-1 w-full py-1.5 px-3 rounded-lg bg-emerald-50 text-emerald-700 font-label-md flex items-center justify-center gap-1.5 text-xs font-semibold border border-emerald-100">
-                                                <span class="material-symbols-outlined text-[16px]">done_all</span>
-                                                <span>Đã uống lúc @(s.TakenAt?.ToString("HH:mm") ?? "sớm nay")</span>
+                                            <div class="font-body-sm text-slate-500 text-[11px] italic bg-slate-50/90 px-2 py-0.5 rounded-md border border-slate-100 flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[13px] text-amber-600">restaurant</span>
+                                                <span class="truncate">@(med?.MealTiming ?? med?.SpecialInstruction)</span>
                                             </div>
                                         }
+
+                                        <div id="status-container-@s.Id" class="mt-0.5">
+                                            @if (s.IsTaken)
+                                            {
+                                                <div class="w-full py-1 px-2 rounded-lg bg-emerald-50 text-emerald-700 font-label-md flex items-center justify-between text-[11px] font-semibold border border-emerald-100">
+                                                    <span class="flex items-center gap-1">
+                                                        <span class="material-symbols-outlined text-[14px]">done_all</span>
+                                                        <span>Đã uống @(s.TakenAt?.ToString("HH:mm") ?? "")</span>
+                                                    </span>
+                                                    <span class="text-[10px] text-emerald-600 underline cursor-pointer hover:text-emerald-800" onclick="toggleMarkAsTaken(@s.Id, '', '', true)">Hoàn tác</span>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" 
+                                                        onclick="toggleMarkAsTaken(@s.Id, '@medName', '@memName')"
+                                                        class="w-full py-1.5 px-2 rounded-lg bg-sky-50 hover:bg-sky-100 text-primary font-label-md flex items-center justify-center gap-1 text-xs font-bold border border-sky-200 transition-colors cursor-pointer">
+                                                    <span class="material-symbols-outlined text-[15px]">check</span>
+                                                    <span>Xác nhận đã uống</span>
+                                                </button>
+                                            }
+                                        </div>
                                     </div>
                                 }
                             }
                             else
                             {
-                                <p class="text-xs text-slate-400 italic py-4 text-center m-0">Không có cữ thuốc sáng</p>
+                                <p class="text-xs text-slate-400 italic py-6 text-center m-0">Không có cữ thuốc sáng</p>
                             }
                         </div>
                     </div>
                 </div>
 
-                <!-- CỮ TRƯA -->
-                <div class="dose-card rounded-2xl bg-white p-5 shadow-sm flex flex-col justify-between" data-dose-slot="noon">
+                <!-- 2. CỮ TRƯA -->
+                <div class="dose-card rounded-2xl bg-white p-4 shadow-sm border border-slate-200/80 flex flex-col justify-between" data-dose-slot="noon">
                     <div>
-                        <div class="flex items-center justify-between pb-3 mb-4 bg-sky-50 -mx-5 -mt-5 p-4 rounded-t-2xl border-b border-sky-100">
+                        <div class="flex items-center justify-between pb-3 mb-3 bg-sky-50/90 -mx-4 -mt-4 p-3.5 rounded-t-2xl border-b border-sky-100">
                             <div class="flex items-center gap-2 text-sky-700">
-                                <span class="material-symbols-outlined text-[26px]">light_mode</span>
+                                <span class="material-symbols-outlined text-[24px]">light_mode</span>
                                 <div>
-                                    <span class="font-title-md text-slate-900 block leading-tight font-bold">CỮ TRƯA</span>
-                                    <span class="font-label-sm text-sky-800 font-medium">11:30 - 13:00 Trưa</span>
+                                    <span class="font-title-md text-slate-900 block leading-tight font-bold text-sm">CỮ TRƯA</span>
+                                    <span class="font-label-sm text-sky-800 font-medium text-xs">11:30 - 13:00 Trưa</span>
                                 </div>
                             </div>
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full @(noonDoses.All(d => d.IsTaken) && noonDoses.Any() ? "bg-emerald-100 text-emerald-800 border-emerald-200" : "bg-sky-100 text-sky-800 border-sky-200") font-label-sm font-semibold text-xs border">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full @(noonDoses.All(d => d.IsTaken) && noonDoses.Any() ? "bg-emerald-100 text-emerald-800 border-emerald-200" : "bg-sky-100 text-sky-800 border-sky-200") font-label-sm font-semibold text-[11px] border">
                                 @(noonDoses.All(d => d.IsTaken) && noonDoses.Any() ? "Hoàn thành" : $"{noonDoses.Count(d => !d.IsTaken)} chưa uống")
                             </span>
                         </div>
-                        <div class="flex flex-col gap-3">
+
+                        <div class="flex flex-col gap-2.5">
                             @if (noonDoses.Any())
                             {
                                 foreach (var s in noonDoses)
                                 {
-                                    <div class="dose-item @(s.IsTaken ? "completed" : "") p-3 rounded-xl bg-slate-50 flex flex-col gap-1.5" data-member="@(s.PrescriptionDose?.PrescriptionItem?.Prescription?.Member?.FullName ?? "")">
+                                    var med = s.PrescriptionDose?.PrescriptionItem;
+                                    var mem = med?.Prescription?.Member;
+                                    var medName = med?.MedicineName ?? "Thuốc";
+                                    var memName = mem?.FullName ?? "Thành viên";
+
+                                    <div id="schedule-item-@s.Id" class="dose-item @(s.IsTaken ? "completed bg-slate-50 border-emerald-200 opacity-90" : "bg-white border-slate-200 shadow-2xs hover:border-sky-300") p-3 rounded-xl border flex flex-col gap-2 transition-all" data-member="@memName">
                                         <div class="flex items-start justify-between gap-2">
-                                            <div>
-                                                <h4 class="font-title-md text-slate-900 text-sm font-bold m-0">@(s.PrescriptionDose?.PrescriptionItem?.MedicineName ?? "Thuốc")</h4>
-                                                <span class="font-label-sm text-slate-600 font-medium">@(s.PrescriptionDose?.PrescriptionItem?.DosagePerTime ?? "1 liều") • Thành viên: <strong class="text-slate-800">@(s.PrescriptionDose?.PrescriptionItem?.Prescription?.Member?.FullName ?? "Thành viên")</strong></span>
+                                            <div class="min-w-0 flex-1">
+                                                <h4 id="schedule-title-@s.Id" class="font-title-md text-slate-900 text-sm font-bold m-0 truncate @(s.IsTaken ? "line-through text-slate-400" : "")">
+                                                    @medName
+                                                </h4>
+                                                <div class="font-label-sm text-slate-600 text-xs mt-0.5">
+                                                    <span class="font-medium text-slate-700">@(med?.DosagePerTime ?? "1 liều")</span>
+                                                    <span class="text-slate-300 mx-1">•</span>
+                                                    <span class="text-slate-500">Thành viên:</span>
+                                                    <strong class="text-slate-800">@memName</strong>
+                                                </div>
                                             </div>
-                                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full @(s.IsTaken ? "bg-tertiary text-white" : "bg-slate-200 text-slate-600") text-[14px] shrink-0">
-                                                <span class="material-symbols-outlined text-[16px]">@(s.IsTaken ? "check" : "schedule")</span>
-                                            </span>
+
+                                            <button type="button" 
+                                                    id="btn-taken-@s.Id"
+                                                    onclick="toggleMarkAsTaken(@s.Id, '@medName', '@memName')"
+                                                    class="w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer border-0 shrink-0 @(s.IsTaken ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200")"
+                                                    title="@(s.IsTaken ? "Bấm để chuyển về chưa uống" : "Bấm để đánh dấu ĐÃ UỐNG")">
+                                                <span class="material-symbols-outlined text-[17px]">@(s.IsTaken ? "check_circle" : "radio_button_unchecked")</span>
+                                            </button>
                                         </div>
-                                        @if (!string.IsNullOrEmpty(s.PrescriptionDose?.PrescriptionItem?.MealTiming))
+
+                                        @if (!string.IsNullOrEmpty(med?.MealTiming) || !string.IsNullOrEmpty(med?.SpecialInstruction))
                                         {
-                                            <p class="font-body-sm text-slate-500 italic m-0 bg-white/80 p-1.5 rounded-lg border border-slate-100">
-                                                “@s.PrescriptionDose.PrescriptionItem.MealTiming”
-                                            </p>
-                                        }
-                                        @if (s.IsTaken)
-                                        {
-                                            <div class="mt-1 w-full py-1.5 px-3 rounded-lg bg-emerald-50 text-emerald-700 font-label-md flex items-center justify-center gap-1.5 text-xs font-semibold border border-emerald-100">
-                                                <span class="material-symbols-outlined text-[16px]">done_all</span>
-                                                <span>Đã uống lúc @(s.TakenAt?.ToString("HH:mm") ?? "trưa nay")</span>
+                                            <div class="font-body-sm text-slate-500 text-[11px] italic bg-slate-50/90 px-2 py-0.5 rounded-md border border-slate-100 flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[13px] text-amber-600">restaurant</span>
+                                                <span class="truncate">@(med?.MealTiming ?? med?.SpecialInstruction)</span>
                                             </div>
                                         }
+
+                                        <div id="status-container-@s.Id" class="mt-0.5">
+                                            @if (s.IsTaken)
+                                            {
+                                                <div class="w-full py-1 px-2 rounded-lg bg-emerald-50 text-emerald-700 font-label-md flex items-center justify-between text-[11px] font-semibold border border-emerald-100">
+                                                    <span class="flex items-center gap-1">
+                                                        <span class="material-symbols-outlined text-[14px]">done_all</span>
+                                                        <span>Đã uống @(s.TakenAt?.ToString("HH:mm") ?? "")</span>
+                                                    </span>
+                                                    <span class="text-[10px] text-emerald-600 underline cursor-pointer hover:text-emerald-800" onclick="toggleMarkAsTaken(@s.Id, '', '', true)">Hoàn tác</span>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" 
+                                                        onclick="toggleMarkAsTaken(@s.Id, '@medName', '@memName')"
+                                                        class="w-full py-1.5 px-2 rounded-lg bg-sky-50 hover:bg-sky-100 text-primary font-label-md flex items-center justify-center gap-1 text-xs font-bold border border-sky-200 transition-colors cursor-pointer">
+                                                    <span class="material-symbols-outlined text-[15px]">check</span>
+                                                    <span>Xác nhận đã uống</span>
+                                                </button>
+                                            }
+                                        </div>
                                     </div>
                                 }
                             }
                             else
                             {
-                                <p class="text-xs text-slate-400 italic py-4 text-center m-0">Không có cữ thuốc trưa</p>
+                                <p class="text-xs text-slate-400 italic py-6 text-center m-0">Không có cữ thuốc trưa</p>
                             }
                         </div>
                     </div>
                 </div>
 
-                <!-- CỮ TỐI -->
-                <div class="dose-card rounded-2xl bg-white p-5 shadow-sm flex flex-col justify-between" data-dose-slot="evening">
+                <!-- 3. CỮ CHIỀU -->
+                <div class="dose-card rounded-2xl bg-white p-4 shadow-sm border border-slate-200/80 flex flex-col justify-between" data-dose-slot="afternoon">
                     <div>
-                        <div class="flex items-center justify-between pb-3 mb-4 bg-indigo-50/80 -mx-5 -mt-5 p-4 rounded-t-2xl border-b border-indigo-100">
-                            <div class="flex items-center gap-2 text-indigo-700">
-                                <span class="material-symbols-outlined text-[26px]">bedtime</span>
+                        <div class="flex items-center justify-between pb-3 mb-3 bg-orange-50/90 -mx-4 -mt-4 p-3.5 rounded-t-2xl border-b border-orange-100">
+                            <div class="flex items-center gap-2 text-orange-700">
+                                <span class="material-symbols-outlined text-[24px]">wb_twilight</span>
                                 <div>
-                                    <span class="font-title-md text-slate-900 block leading-tight font-bold">CỮ TỐI</span>
-                                    <span class="font-label-sm text-indigo-800 font-medium">19:30 - 21:00 Tối</span>
+                                    <span class="font-title-md text-slate-900 block leading-tight font-bold text-sm">CỮ CHIỀU</span>
+                                    <span class="font-label-sm text-orange-800 font-medium text-xs">16:30 - 18:00 Chiều</span>
                                 </div>
                             </div>
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full @(eveningDoses.All(d => d.IsTaken) && eveningDoses.Any() ? "bg-emerald-100 text-emerald-800 border-emerald-200" : "bg-indigo-100 text-indigo-800 border-indigo-200") font-label-sm font-semibold text-xs border">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full @(afternoonDoses.All(d => d.IsTaken) && afternoonDoses.Any() ? "bg-emerald-100 text-emerald-800 border-emerald-200" : "bg-orange-100 text-orange-800 border-orange-200") font-label-sm font-semibold text-[11px] border">
+                                @(afternoonDoses.All(d => d.IsTaken) && afternoonDoses.Any() ? "Hoàn thành" : $"{afternoonDoses.Count(d => !d.IsTaken)} chưa uống")
+                            </span>
+                        </div>
+
+                        <div class="flex flex-col gap-2.5">
+                            @if (afternoonDoses.Any())
+                            {
+                                foreach (var s in afternoonDoses)
+                                {
+                                    var med = s.PrescriptionDose?.PrescriptionItem;
+                                    var mem = med?.Prescription?.Member;
+                                    var medName = med?.MedicineName ?? "Thuốc";
+                                    var memName = mem?.FullName ?? "Thành viên";
+
+                                    <div id="schedule-item-@s.Id" class="dose-item @(s.IsTaken ? "completed bg-slate-50 border-emerald-200 opacity-90" : "bg-white border-slate-200 shadow-2xs hover:border-sky-300") p-3 rounded-xl border flex flex-col gap-2 transition-all" data-member="@memName">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <div class="min-w-0 flex-1">
+                                                <h4 id="schedule-title-@s.Id" class="font-title-md text-slate-900 text-sm font-bold m-0 truncate @(s.IsTaken ? "line-through text-slate-400" : "")">
+                                                    @medName
+                                                </h4>
+                                                <div class="font-label-sm text-slate-600 text-xs mt-0.5">
+                                                    <span class="font-medium text-slate-700">@(med?.DosagePerTime ?? "1 liều")</span>
+                                                    <span class="text-slate-300 mx-1">•</span>
+                                                    <span class="text-slate-500">Thành viên:</span>
+                                                    <strong class="text-slate-800">@memName</strong>
+                                                </div>
+                                            </div>
+
+                                            <button type="button" 
+                                                    id="btn-taken-@s.Id"
+                                                    onclick="toggleMarkAsTaken(@s.Id, '@medName', '@memName')"
+                                                    class="w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer border-0 shrink-0 @(s.IsTaken ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200")"
+                                                    title="@(s.IsTaken ? "Bấm để chuyển về chưa uống" : "Bấm để đánh dấu ĐÃ UỐNG")">
+                                                <span class="material-symbols-outlined text-[17px]">@(s.IsTaken ? "check_circle" : "radio_button_unchecked")</span>
+                                            </button>
+                                        </div>
+
+                                        @if (!string.IsNullOrEmpty(med?.MealTiming) || !string.IsNullOrEmpty(med?.SpecialInstruction))
+                                        {
+                                            <div class="font-body-sm text-slate-500 text-[11px] italic bg-slate-50/90 px-2 py-0.5 rounded-md border border-slate-100 flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[13px] text-amber-600">restaurant</span>
+                                                <span class="truncate">@(med?.MealTiming ?? med?.SpecialInstruction)</span>
+                                            </div>
+                                        }
+
+                                        <div id="status-container-@s.Id" class="mt-0.5">
+                                            @if (s.IsTaken)
+                                            {
+                                                <div class="w-full py-1 px-2 rounded-lg bg-emerald-50 text-emerald-700 font-label-md flex items-center justify-between text-[11px] font-semibold border border-emerald-100">
+                                                    <span class="flex items-center gap-1">
+                                                        <span class="material-symbols-outlined text-[14px]">done_all</span>
+                                                        <span>Đã uống @(s.TakenAt?.ToString("HH:mm") ?? "")</span>
+                                                    </span>
+                                                    <span class="text-[10px] text-emerald-600 underline cursor-pointer hover:text-emerald-800" onclick="toggleMarkAsTaken(@s.Id, '', '', true)">Hoàn tác</span>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" 
+                                                        onclick="toggleMarkAsTaken(@s.Id, '@medName', '@memName')"
+                                                        class="w-full py-1.5 px-2 rounded-lg bg-sky-50 hover:bg-sky-100 text-primary font-label-md flex items-center justify-center gap-1 text-xs font-bold border border-sky-200 transition-colors cursor-pointer">
+                                                    <span class="material-symbols-outlined text-[15px]">check</span>
+                                                    <span>Xác nhận đã uống</span>
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p class="text-xs text-slate-400 italic py-6 text-center m-0">Không có cữ thuốc chiều</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. CỮ TỐI -->
+                <div class="dose-card rounded-2xl bg-white p-4 shadow-sm border border-slate-200/80 flex flex-col justify-between" data-dose-slot="evening">
+                    <div>
+                        <div class="flex items-center justify-between pb-3 mb-3 bg-indigo-50/90 -mx-4 -mt-4 p-3.5 rounded-t-2xl border-b border-indigo-100">
+                            <div class="flex items-center gap-2 text-indigo-700">
+                                <span class="material-symbols-outlined text-[24px]">bedtime</span>
+                                <div>
+                                    <span class="font-title-md text-slate-900 block leading-tight font-bold text-sm">CỮ TỐI</span>
+                                    <span class="font-label-sm text-indigo-800 font-medium text-xs">19:30 - 21:00 Tối</span>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full @(eveningDoses.All(d => d.IsTaken) && eveningDoses.Any() ? "bg-emerald-100 text-emerald-800 border-emerald-200" : "bg-indigo-100 text-indigo-800 border-indigo-200") font-label-sm font-semibold text-[11px] border">
                                 @(eveningDoses.All(d => d.IsTaken) && eveningDoses.Any() ? "Hoàn thành" : $"{eveningDoses.Count(d => !d.IsTaken)} chưa uống")
                             </span>
                         </div>
-                        <div class="flex flex-col gap-3">
+
+                        <div class="flex flex-col gap-2.5">
                             @if (eveningDoses.Any())
                             {
                                 foreach (var s in eveningDoses)
                                 {
-                                    <div class="dose-item @(s.IsTaken ? "completed" : "") p-3 rounded-xl bg-slate-50 flex flex-col gap-1.5" data-member="@(s.PrescriptionDose?.PrescriptionItem?.Prescription?.Member?.FullName ?? "")">
+                                    var med = s.PrescriptionDose?.PrescriptionItem;
+                                    var mem = med?.Prescription?.Member;
+                                    var medName = med?.MedicineName ?? "Thuốc";
+                                    var memName = mem?.FullName ?? "Thành viên";
+
+                                    <div id="schedule-item-@s.Id" class="dose-item @(s.IsTaken ? "completed bg-slate-50 border-emerald-200 opacity-90" : "bg-white border-slate-200 shadow-2xs hover:border-sky-300") p-3 rounded-xl border flex flex-col gap-2 transition-all" data-member="@memName">
                                         <div class="flex items-start justify-between gap-2">
-                                            <div>
-                                                <h4 class="font-title-md text-slate-900 text-sm font-bold m-0">@(s.PrescriptionDose?.PrescriptionItem?.MedicineName ?? "Thuốc")</h4>
-                                                <span class="font-label-sm text-slate-600 font-medium">@(s.PrescriptionDose?.PrescriptionItem?.DosagePerTime ?? "1 liều") • Thành viên: <strong class="text-slate-800">@(s.PrescriptionDose?.PrescriptionItem?.Prescription?.Member?.FullName ?? "Thành viên")</strong></span>
+                                            <div class="min-w-0 flex-1">
+                                                <h4 id="schedule-title-@s.Id" class="font-title-md text-slate-900 text-sm font-bold m-0 truncate @(s.IsTaken ? "line-through text-slate-400" : "")">
+                                                    @medName
+                                                </h4>
+                                                <div class="font-label-sm text-slate-600 text-xs mt-0.5">
+                                                    <span class="font-medium text-slate-700">@(med?.DosagePerTime ?? "1 liều")</span>
+                                                    <span class="text-slate-300 mx-1">•</span>
+                                                    <span class="text-slate-500">Thành viên:</span>
+                                                    <strong class="text-slate-800">@memName</strong>
+                                                </div>
                                             </div>
-                                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full @(s.IsTaken ? "bg-tertiary text-white" : "bg-slate-200 text-slate-600") text-[14px] shrink-0">
-                                                <span class="material-symbols-outlined text-[16px]">@(s.IsTaken ? "check" : "schedule")</span>
-                                            </span>
+
+                                            <button type="button" 
+                                                    id="btn-taken-@s.Id"
+                                                    onclick="toggleMarkAsTaken(@s.Id, '@medName', '@memName')"
+                                                    class="w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer border-0 shrink-0 @(s.IsTaken ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200")"
+                                                    title="@(s.IsTaken ? "Bấm để chuyển về chưa uống" : "Bấm để đánh dấu ĐÃ UỐNG")">
+                                                <span class="material-symbols-outlined text-[17px]">@(s.IsTaken ? "check_circle" : "radio_button_unchecked")</span>
+                                            </button>
                                         </div>
-                                        @if (!string.IsNullOrEmpty(s.PrescriptionDose?.PrescriptionItem?.MealTiming))
+
+                                        @if (!string.IsNullOrEmpty(med?.MealTiming) || !string.IsNullOrEmpty(med?.SpecialInstruction))
                                         {
-                                            <p class="font-body-sm text-slate-500 italic m-0 bg-white/80 p-1.5 rounded-lg border border-slate-100">
-                                                “@s.PrescriptionDose.PrescriptionItem.MealTiming”
-                                            </p>
-                                        }
-                                        @if (s.IsTaken)
-                                        {
-                                            <div class="mt-1 w-full py-1.5 px-3 rounded-lg bg-emerald-50 text-emerald-700 font-label-md flex items-center justify-center gap-1.5 text-xs font-semibold border border-emerald-100">
-                                                <span class="material-symbols-outlined text-[16px]">done_all</span>
-                                                <span>Đã uống lúc @(s.TakenAt?.ToString("HH:mm") ?? "tối nay")</span>
+                                            <div class="font-body-sm text-slate-500 text-[11px] italic bg-slate-50/90 px-2 py-0.5 rounded-md border border-slate-100 flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[13px] text-amber-600">restaurant</span>
+                                                <span class="truncate">@(med?.MealTiming ?? med?.SpecialInstruction)</span>
                                             </div>
                                         }
+
+                                        <div id="status-container-@s.Id" class="mt-0.5">
+                                            @if (s.IsTaken)
+                                            {
+                                                <div class="w-full py-1 px-2 rounded-lg bg-emerald-50 text-emerald-700 font-label-md flex items-center justify-between text-[11px] font-semibold border border-emerald-100">
+                                                    <span class="flex items-center gap-1">
+                                                        <span class="material-symbols-outlined text-[14px]">done_all</span>
+                                                        <span>Đã uống @(s.TakenAt?.ToString("HH:mm") ?? "")</span>
+                                                    </span>
+                                                    <span class="text-[10px] text-emerald-600 underline cursor-pointer hover:text-emerald-800" onclick="toggleMarkAsTaken(@s.Id, '', '', true)">Hoàn tác</span>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" 
+                                                        onclick="toggleMarkAsTaken(@s.Id, '@medName', '@memName')"
+                                                        class="w-full py-1.5 px-2 rounded-lg bg-sky-50 hover:bg-sky-100 text-primary font-label-md flex items-center justify-center gap-1 text-xs font-bold border border-sky-200 transition-colors cursor-pointer">
+                                                    <span class="material-symbols-outlined text-[15px]">check</span>
+                                                    <span>Xác nhận đã uống</span>
+                                                </button>
+                                            }
+                                        </div>
                                     </div>
                                 }
                             }
                             else
                             {
-                                <p class="text-xs text-slate-400 italic py-4 text-center m-0">Không có cữ thuốc tối</p>
+                                <p class="text-xs text-slate-400 italic py-6 text-center m-0">Không có cữ thuốc tối</p>
                             }
                         </div>
                     </div>
                 </div>
-            }
-            else
-            {
-                <div class="col-span-full bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center shadow-xs">
-                    <div class="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 border border-amber-100 shadow-inner">
-                        <span class="material-symbols-outlined text-[36px]">medication</span>
-                    </div>
-                    <h3 class="text-base font-bold text-slate-900 mb-1">Hôm nay không có lịch uống thuốc</h3>
-                    <p class="text-xs text-slate-500 max-w-md mx-auto mb-6">Tất cả thành viên trong tổ ấm hiện không có cữ thuốc nào cần uống trong ngày hôm nay.</p>
-                    <button onclick="openModal('addPrescriptionModal')" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-xs sm:text-sm font-semibold hover:bg-sky-600 shadow-md shadow-sky-600/20 transition-all border-0 cursor-pointer">
-                        <span class="material-symbols-outlined text-[18px]">add_circle</span>
-                        <span>+ Thêm đơn thuốc mới</span>
-                    </button>
-                </div>
-            }
-        </div>
+
+            </div>
+        }
     </div>
 
-    <!-- 5. TAB CONTENT 2: LỊCH HẸN TÁI KHÁM SẮP TỚI -->
+    <!-- 5. TAB CONTENT 2: DANH SÁCH ĐƠN THUỐC ĐIỀU TRỊ -->
+    <div id="tabContentPrescriptions" class="@(activeTab == "prescriptions" ? "block" : "hidden") space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 md:p-5 rounded-2xl bg-white shadow-sm border border-slate-200">
+            <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-xl bg-sky-100 text-primary flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[26px]">prescriptions</span>
+                </div>
+                <div>
+                    <h2 class="font-headline-sm text-slate-900 tracking-tight m-0 text-base md:text-lg font-bold">
+                        DANH SÁCH ĐƠN THUỐC ĐIỀU TRỊ
+                    </h2>
+                    <p class="font-body-sm text-slate-500 m-0 text-xs sm:text-sm">
+                        Quản lý toàn bộ đơn thuốc bác sĩ kê và phác đồ điều trị cho các thành viên trong gia đình
+                    </p>
+                </div>
+            </div>
+            <button onclick="openModal('addPrescriptionModal')" class="btn-action-primary px-4 py-2 rounded-xl bg-primary text-white font-label-md hover:bg-primary-container transition-colors cursor-pointer flex items-center gap-1.5 border-0 text-xs font-semibold self-start sm:self-auto">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                <span>+ Kê đơn thuốc mới</span>
+            </button>
+        </div>
+
+        @if (Model?.ActivePrescriptions != null && Model.ActivePrescriptions.Any())
+        {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @foreach (var p in Model.ActivePrescriptions)
+                {
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+                        <div>
+                            <div class="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="font-title-md text-slate-900 font-bold text-base m-0">@p.PrescriptionName</h3>
+                                        <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">Đang điều trị</span>
+                                    </div>
+                                    <div class="font-label-sm text-slate-500 text-xs mt-1">
+                                        Thành viên: <strong class="text-slate-800">@(p.Member?.FullName ?? "Chưa rõ")</strong> (@(p.Member?.Relationship ?? "Gia đình"))
+                                    </div>
+                                </div>
+
+                                <!-- Action delete prescription -->
+                                <form asp-action="Delete" asp-controller="Prescriptions" asp-route-id="@p.Id" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa đơn thuốc \'@p.PrescriptionName\' cùng toàn bộ các lịch nhắc uống thuốc liên quan?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center border border-rose-200 transition-colors cursor-pointer" title="Xóa đơn thuốc này">
+                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 py-3 text-xs text-slate-600">
+                                <div>
+                                    <span class="text-slate-400 block text-[11px]">Bác sĩ điều trị:</span>
+                                    <span class="font-semibold text-slate-800">@(p.DoctorName ?? p.MedicalRecord?.DoctorName ?? "Bác sĩ chỉ định")</span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[11px]">Thời gian điều trị:</span>
+                                    <span class="font-semibold text-slate-800">@p.StartDate.ToString("dd/MM/yyyy") - @p.EndDate.ToString("dd/MM/yyyy")</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-2 space-y-2">
+                                <span class="font-label-sm text-slate-700 text-xs font-bold uppercase tracking-wider block">Các loại thuốc trong đơn:</span>
+                                @if (p.PrescriptionItems != null && p.PrescriptionItems.Any())
+                                {
+                                    foreach (var item in p.PrescriptionItems)
+                                    {
+                                        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-start justify-between gap-2 text-xs">
+                                            <div>
+                                                <div class="font-bold text-slate-900">@item.MedicineName</div>
+                                                <div class="text-slate-500 mt-0.5">@item.DosagePerTime • @item.MealTiming</div>
+                                            </div>
+                                            <div class="flex items-center gap-1 flex-wrap justify-end">
+                                                @foreach (var dose in item.PrescriptionDoses)
+                                                {
+                                                    <span class="px-1.5 py-0.5 rounded bg-sky-100 text-primary font-bold text-[10px]">
+                                                        @(dose.TimeOfDay ?? dose.DoseTime.ToString(@"hh\:mm"))
+                                                    </span>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <p class="text-xs text-slate-400 italic m-0">Chưa có thông tin thuốc chi tiết</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center shadow-xs">
+                <div class="w-16 h-16 rounded-2xl bg-sky-50 text-primary flex items-center justify-center mx-auto mb-4 border border-sky-100 shadow-inner">
+                    <span class="material-symbols-outlined text-[36px]">receipt_long</span>
+                </div>
+                <h3 class="text-base font-bold text-slate-900 mb-1">Chưa có đơn thuốc nào trong hệ thống</h3>
+                <p class="text-xs text-slate-500 max-w-md mx-auto mb-6">Hãy thêm đơn thuốc mới từ bác sĩ để hệ thống tự động sinh lịch nhắc nhở uống thuốc hàng ngày.</p>
+                <button onclick="openModal('addPrescriptionModal')" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-xs sm:text-sm font-semibold hover:bg-sky-600 shadow-md shadow-sky-600/20 transition-all border-0 cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                    <span>+ Kê đơn thuốc mới</span>
+                </button>
+            </div>
+        }
+    </div>
+
+    <!-- 6. TAB CONTENT 3: LỊCH HẸN TÁI KHÁM SẮP TỚI -->
     <div id="tabContentAppointments" class="@(activeTab == "appointments" ? "block" : "hidden") space-y-6">
         <!-- Header Block -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 md:p-5 rounded-2xl bg-white shadow-sm border border-slate-200">
@@ -395,15 +731,15 @@
                     <h2 class="font-headline-sm text-slate-900 tracking-tight m-0 text-base md:text-lg font-bold">
                         LỊCH TÁI KHÁM &amp; TIÊM CHỦNG SẮP TỚI
                     </h2>
-                    <p class="font-body-sm text-slate-500 m-0">
+                    <p class="font-body-sm text-slate-500 m-0 text-xs sm:text-sm">
                         Các lịch hẹn khám chuyên khoa và mốc tiêm chủng phòng bệnh sắp diễn ra cho cả gia đình
                     </p>
                 </div>
             </div>
-            <button onclick="openModal('addAppointmentModal')" class="btn-action-primary px-4 py-2 rounded-xl bg-primary text-white font-label-md hover:bg-primary-container transition-colors cursor-pointer flex items-center gap-1.5 border-0 text-xs font-semibold self-start sm:self-auto">
-                <span class="material-symbols-outlined text-[18px]">add</span>
-                <span>+ Đặt lịch tái khám mới</span>
-            </button>
+            <a asp-controller="Appointments" asp-action="Index" class="btn-action-primary px-4 py-2 rounded-xl bg-primary text-white font-label-md hover:bg-primary-container transition-colors cursor-pointer flex items-center gap-1.5 border-0 text-xs font-semibold self-start sm:self-auto text-decoration-none">
+                <span class="material-symbols-outlined text-[18px]">calendar_add_on</span>
+                <span>Quản lý lịch hẹn &amp; tái khám</span>
+            </a>
         </div>
 
         <!-- Appointment Schedule Table -->
@@ -417,7 +753,7 @@
                             <th class="py-3.5 px-4 font-semibold">Bệnh viện / Cơ sở</th>
                             <th class="py-3.5 px-4 font-semibold">Bác sĩ / Chuyên khoa</th>
                             <th class="py-3.5 px-4 font-semibold">Yêu cầu lâm sàng</th>
-                            <th class="py-3.5 px-4 font-semibold text-right">Trạng thái &amp; Thao tác</th>
+                            <th class="py-3.5 px-4 font-semibold text-right">Trạng thái</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 font-body-sm text-slate-700">
@@ -511,53 +847,38 @@
                     </tbody>
                 </table>
             </div>
-
-            <!-- Footer Note & Quick Tips Inside Schedule Card -->
-            <div class="p-4 bg-slate-50 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 border-t border-slate-200">
-                <div class="flex items-center gap-2 text-slate-600 font-body-sm text-xs">
-                    <span class="material-symbols-outlined text-primary text-[18px]">info</span>
-                    <span>Bấm nút “Xem chỉ dẫn đường đi” để nhận lộ trình di chuyển và phiếu đăng ký khám điện tử QR Code.</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <a href="javascript:void(0)" onclick="showToast('Đang tải danh sách lịch sử tái khám các năm trước...')" class="font-label-sm text-primary hover:underline font-semibold flex items-center gap-1 text-xs text-decoration-none">
-                        <span>Xem lịch sử tái khám các năm trước</span>
-                        <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
-                    </a>
-                </div>
-            </div>
         </div>
     </div>
 </div>
 
 <!-- ========================================================================= -->
-<!-- MODALS & TOAST NOTIFICATIONS                                             -->
+<!-- MODAL: KÊ ĐƠN THUỐC MỚI VÀ CHIA CỮ UỐNG HÀNG NGÀY                         -->
 <!-- ========================================================================= -->
-
-<!-- Modal: Thêm Đơn Thuốc Mới -->
-<div id="addPrescriptionModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl modal-fade-in border border-slate-100">
+<div id="addPrescriptionModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl modal-fade-in border border-slate-100 my-8">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-sky-100 text-primary flex items-center justify-center">
-                    <span class="material-symbols-outlined text-[20px]">medication</span>
+                <div class="w-10 h-10 rounded-xl bg-sky-100 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[24px]">prescriptions</span>
                 </div>
-                <h3 class="font-headline-sm text-slate-900 text-lg font-bold m-0">+ Thêm Đơn Thuốc Mới</h3>
+                <div>
+                    <h3 class="font-headline-sm text-slate-900 text-lg font-bold m-0">+ Kê Đơn Thuốc Mới</h3>
+                    <p class="text-xs text-slate-500 m-0">Tự động lập lịch nhắc nhở 4 cữ uống hàng ngày trong suốt thời gian điều trị</p>
+                </div>
             </div>
             <button onclick="closeModal('addPrescriptionModal')" class="text-slate-400 hover:text-slate-600 border-0 bg-transparent cursor-pointer">
                 <span class="material-symbols-outlined text-[22px]">close</span>
             </button>
         </div>
 
-        <form id="newPrescriptionForm" onsubmit="handlePrescriptionSubmit(event)" class="mt-4 space-y-4">
-            <div>
-                <label class="block font-label-sm text-slate-700 font-semibold mb-1">Tên thuốc &amp; Hàm lượng *</label>
-                <input type="text" required placeholder="Ví dụ: Augmentin 1g, Glucophage 500mg..." class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary text-sm outline-none" />
-            </div>
+        <form asp-action="Create" asp-controller="Prescriptions" method="post" id="createPrescriptionForm" class="mt-4 space-y-4">
+            @Html.AntiForgeryToken()
 
+            <!-- 1. THÀNH VIÊN VÀ TÊN ĐƠN THUỐC -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                    <label class="block font-label-sm text-slate-700 font-semibold mb-1">Thành viên dùng *</label>
-                    <select required class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary text-sm outline-none bg-white">
+                    <label class="block font-label-sm text-slate-700 font-semibold mb-1 text-xs">Thành viên dùng thuốc *</label>
+                    <select name="MemberId" required class="w-full h-10 px-3 rounded-xl border border-slate-300 focus:border-primary text-xs outline-none bg-white">
                         @if (Model?.Members != null && Model.Members.Any())
                         {
                             foreach (var member in Model.Members)
@@ -572,159 +893,111 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block font-label-sm text-slate-700 font-semibold mb-1">Liều lượng mỗi lần *</label>
-                    <input type="text" required placeholder="Ví dụ: 1 viên, 5ml, 1 giọt" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary text-sm outline-none" />
+                    <label class="block font-label-sm text-slate-700 font-semibold mb-1 text-xs">Tên đơn thuốc *</label>
+                    <input type="text" name="PrescriptionName" required placeholder="Ví dụ: Đơn thuốc Điều trị Cao huyết áp &amp; Dạ dày" class="w-full h-10 px-3 rounded-xl border border-slate-300 focus:border-primary text-xs outline-none" />
                 </div>
             </div>
 
-            <div>
-                <label class="block font-label-sm text-slate-700 font-semibold mb-1">Các cữ uống trong ngày *</label>
-                <div class="flex items-center gap-3">
-                    <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
-                        <input type="checkbox" checked class="rounded text-primary focus:ring-primary" />
-                        <span>Sáng (07:00)</span>
-                    </label>
-                    <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
-                        <input type="checkbox" checked class="rounded text-primary focus:ring-primary" />
-                        <span>Trưa (11:30)</span>
-                    </label>
-                    <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
-                        <input type="checkbox" checked class="rounded text-primary focus:ring-primary" />
-                        <span>Tối (20:00)</span>
-                    </label>
+            <!-- 2. BÁC SĨ & BỆNH ÁN LIÊN KẾT -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-label-sm text-slate-700 font-semibold mb-1 text-xs">Bác sĩ kê đơn</label>
+                    <input type="text" name="DoctorName" placeholder="Ví dụ: BS. CKII Nguyễn Văn Hùng" class="w-full h-10 px-3 rounded-xl border border-slate-300 focus:border-primary text-xs outline-none" />
+                </div>
+                <div>
+                    <label class="block font-label-sm text-slate-700 font-semibold mb-1 text-xs">Bệnh án liên kết (nếu có)</label>
+                    <select name="MedicalRecordId" class="w-full h-10 px-3 rounded-xl border border-slate-300 focus:border-primary text-xs outline-none bg-white">
+                        <option value="">-- Không liên kết bệnh án --</option>
+                        @if (Model?.MedicalRecords != null)
+                        {
+                            foreach (var rec in Model.MedicalRecords)
+                            {
+                                <option value="@rec.Id">@rec.ExamDate.ToString("dd/MM/yyyy") - @rec.HospitalName (@rec.Diagnosis)</option>
+                            }
+                        }
+                    </select>
                 </div>
             </div>
 
-            <div>
-                <label class="block font-label-sm text-slate-700 font-semibold mb-1">Hướng dẫn dùng thuốc (Trước / Sau ăn)</label>
-                <input type="text" placeholder="Ví dụ: Uống sau ăn no 30 phút với nhiều nước lọc" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary text-sm outline-none" />
+            <!-- 3. THỜI GIAN ĐIỀU TRỊ -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-label-sm text-slate-700 font-semibold mb-1 text-xs">Ngày bắt đầu *</label>
+                    <input type="date" name="StartDate" value="@DateTime.Today.ToString("yyyy-MM-dd")" required class="w-full h-10 px-3 rounded-xl border border-slate-300 focus:border-primary text-xs outline-none" />
+                </div>
+                <div>
+                    <label class="block font-label-sm text-slate-700 font-semibold mb-1 text-xs">Ngày kết thúc *</label>
+                    <input type="date" name="EndDate" value="@DateTime.Today.AddDays(7).ToString("yyyy-MM-dd")" required class="w-full h-10 px-3 rounded-xl border border-slate-300 focus:border-primary text-xs outline-none" />
+                </div>
+            </div>
+
+            <!-- 4. DANH SÁCH THUỐC & PHÂN CHIA 4 CỮ UỐNG -->
+            <div class="pt-2 border-t border-slate-100">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="font-label-sm text-slate-800 font-bold text-xs uppercase tracking-wider">
+                        Danh sách thuốc &amp; Cữ uống trong ngày:
+                    </label>
+                    <button type="button" onclick="addDrugItemRow()" class="px-2.5 py-1 rounded-lg bg-sky-50 text-primary hover:bg-sky-100 border border-sky-200 text-xs font-semibold flex items-center gap-1 cursor-pointer">
+                        <span class="material-symbols-outlined text-[15px]">add</span>
+                        <span>+ Thêm thuốc</span>
+                    </button>
+                </div>
+
+                <div id="drugItemsList" class="space-y-3">
+                    <!-- Thuốc #1 -->
+                    <div class="drug-item-card p-3.5 rounded-xl bg-slate-50 border border-slate-200 relative">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-slate-600 font-semibold text-[11px] mb-1">Tên thuốc &amp; Hàm lượng *</label>
+                                <input type="text" name="Drugs[0].DrugName" required placeholder="Ví dụ: Amlodipine 5mg, Augmentin 1g" class="w-full h-9 px-3 rounded-lg border border-slate-300 focus:border-primary text-xs outline-none bg-white" />
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-slate-600 font-semibold text-[11px] mb-1">Liều lượng mỗi lần *</label>
+                                    <input type="text" name="Drugs[0].Dosage" value="1 viên" required placeholder="1 viên, 5ml" class="w-full h-9 px-3 rounded-lg border border-slate-300 focus:border-primary text-xs outline-none bg-white" />
+                                </div>
+                                <div>
+                                    <label class="block text-slate-600 font-semibold text-[11px] mb-1">Cách dùng *</label>
+                                    <input type="text" name="Drugs[0].MealTiming" value="Sau ăn 30 phút" placeholder="Sau ăn no, Trước ăn" class="w-full h-9 px-3 rounded-lg border border-slate-300 focus:border-primary text-xs outline-none bg-white" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-2.5">
+                            <label class="block text-slate-600 font-semibold text-[11px] mb-1">Các cữ uống trong ngày (Chọn ít nhất 1 cữ):</label>
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-amber-400">
+                                    <input type="checkbox" name="Drugs[0].Morning" value="true" checked class="rounded text-primary focus:ring-primary" />
+                                    <span>Sáng (08:00)</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-sky-400">
+                                    <input type="checkbox" name="Drugs[0].Noon" value="true" class="rounded text-primary focus:ring-primary" />
+                                    <span>Trưa (12:00)</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-orange-400">
+                                    <input type="checkbox" name="Drugs[0].Afternoon" value="true" class="rounded text-primary focus:ring-primary" />
+                                    <span>Chiều (17:30)</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-indigo-400">
+                                    <input type="checkbox" name="Drugs[0].Evening" value="true" checked class="rounded text-primary focus:ring-primary" />
+                                    <span>Tối (20:30)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button type="button" onclick="closeModal('addPrescriptionModal')" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-label-md hover:bg-slate-200 transition-colors border-0 cursor-pointer text-xs font-semibold">
                     Hủy bỏ
                 </button>
-                <button type="submit" class="px-4 py-2 rounded-xl bg-primary text-white font-label-md hover:bg-primary-container transition-colors border-0 cursor-pointer text-xs font-semibold shadow-sm">
-                    Lưu đơn thuốc &amp; Đặt lịch nhắc
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-primary text-white font-label-md hover:bg-primary-container transition-colors border-0 cursor-pointer text-xs font-semibold shadow-sm flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[17px]">save</span>
+                    <span>Lưu đơn thuốc &amp; Tạo lịch nhắc</span>
                 </button>
             </div>
         </form>
-    </div>
-</div>
-
-<!-- Modal: Đặt Lịch Tái Khám Mới -->
-<div id="addAppointmentModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl modal-fade-in border border-slate-100">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-cyan-100 text-secondary flex items-center justify-center">
-                    <span class="material-symbols-outlined text-[20px]">calendar_add_on</span>
-                </div>
-                <h3 class="font-headline-sm text-slate-900 text-lg font-bold m-0">+ Đặt Lịch Tái Khám Mới</h3>
-            </div>
-            <button onclick="closeModal('addAppointmentModal')" class="text-slate-400 hover:text-slate-600 border-0 bg-transparent cursor-pointer">
-                <span class="material-symbols-outlined text-[22px]">close</span>
-            </button>
-        </div>
-
-        <form id="newAppointmentForm" onsubmit="handleAppointmentSubmit(event)" class="mt-4 space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block font-label-sm text-slate-700 font-semibold mb-1">Thành viên khám *</label>
-                    <select required class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary text-sm outline-none bg-white">
-                        @if (Model?.Members != null && Model.Members.Any())
-                        {
-                            foreach (var member in Model.Members)
-                            {
-                                <option value="@member.Id">@member.FullName (@member.Relationship)</option>
-                            }
-                        }
-                        else
-                        {
-                            <option value="">Chưa có thành viên nào</option>
-                        }
-                    </select>
-                </div>
-                <div>
-                    <label class="block font-label-sm text-slate-700 font-semibold mb-1">Ngày giờ hẹn *</label>
-                    <input type="datetime-local" required class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary text-sm outline-none" />
-                </div>
-            </div>
-
-            <div>
-                <label class="block font-label-sm text-slate-700 font-semibold mb-1">Bệnh viện / Cơ sở y tế *</label>
-                <input type="text" required placeholder="Nhập tên bệnh viện hoặc phòng khám..." class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary text-sm outline-none" />
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block font-label-sm text-slate-700 font-semibold mb-1">Bác sĩ phụ trách</label>
-                    <input type="text" placeholder="Ví dụ: Bác sĩ điều trị / Trưởng khoa..." class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary text-sm outline-none" />
-                </div>
-                <div>
-                    <label class="block font-label-sm text-slate-700 font-semibold mb-1">Chuyên khoa</label>
-                    <input type="text" placeholder="Ví dụ: Tim Mạch, Nhi Khoa, Tiêu Hóa" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary text-sm outline-none" />
-                </div>
-            </div>
-
-            <div>
-                <label class="block font-label-sm text-slate-700 font-semibold mb-1">Lưu ý trước khám / Yêu cầu lâm sàng</label>
-                <input type="text" placeholder="Ví dụ: Nhịn ăn sáng, mang theo sổ khám cũ, siêu âm tim..." class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-primary text-sm outline-none" />
-            </div>
-
-            <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-                <button type="button" onclick="closeModal('addAppointmentModal')" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-label-md hover:bg-slate-200 transition-colors border-0 cursor-pointer text-xs font-semibold">
-                    Hủy bỏ
-                </button>
-                <button type="submit" class="px-4 py-2 rounded-xl bg-secondary text-white font-label-md hover:bg-cyan-800 transition-colors border-0 cursor-pointer text-xs font-semibold shadow-sm">
-                    Lưu lịch hẹn &amp; Bật nhắc nhở
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Modal: Chỉ dẫn đường đi & Phiếu Khám -->
-<div id="directionsModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl modal-fade-in border border-slate-100">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                    <span class="material-symbols-outlined text-[20px]">directions</span>
-                </div>
-                <h3 class="font-headline-sm text-slate-900 text-lg font-bold m-0">Chỉ Dẫn Đường Đi &amp; Phiếu Khám</h3>
-            </div>
-            <button onclick="closeModal('directionsModal')" class="text-slate-400 hover:text-slate-600 border-0 bg-transparent cursor-pointer">
-                <span class="material-symbols-outlined text-[22px]">close</span>
-            </button>
-        </div>
-
-        <div class="mt-4 space-y-4">
-            <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-                <div class="font-label-sm text-slate-500 uppercase tracking-wider text-[11px]">Điểm đến:</div>
-                <div id="directionsHospitalName" class="font-headline-sm text-slate-900 font-bold text-base mt-0.5">Bệnh viện / Cơ sở y tế</div>
-                <div id="directionsHospitalAddress" class="font-body-sm text-slate-600 text-xs mt-1">Địa chỉ phòng khám đã đăng ký</div>
-                <div id="directionsHospitalRoom" class="font-label-sm text-primary font-semibold text-xs mt-1">Phòng khám chuyên khoa</div>
-            </div>
-
-            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-2.5">
-                <span class="material-symbols-outlined text-amber-700 text-[20px] shrink-0 mt-0.5">lightbulb</span>
-                <p class="font-body-sm text-amber-800 text-xs m-0">
-                    <strong>Gợi ý di chuyển:</strong> Giờ cao điểm buổi sáng tại trục đường này thường ùn ứ. Vui lòng xuất phát trước giờ hẹn ít nhất 45 phút để làm thủ tục tiếp đón.
-                </p>
-            </div>
-
-            <div class="flex items-center gap-2">
-                <a id="googleMapsLink" href="https://maps.google.com" target="_blank" rel="noopener noreferrer" class="flex-1 py-2.5 px-3 rounded-xl bg-primary text-white font-label-md flex items-center justify-center gap-2 hover:bg-primary-container transition-colors text-xs font-semibold text-decoration-none">
-                    <span class="material-symbols-outlined text-[18px]">map</span>
-                    <span>Mở trên Google Maps</span>
-                </a>
-                <button onclick="downloadAppointmentTicket()" class="px-3.5 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors font-label-md flex items-center gap-1.5 border-0 cursor-pointer text-xs font-semibold">
-                    <span class="material-symbols-outlined text-[18px]">qr_code_2</span>
-                    <span>Lấy mã QR tiếp đón</span>
-                </button>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -735,38 +1008,37 @@
     <script>
         // Tab switching logic
         function switchViewTab(tab) {
-            const tabBtnMed = document.getElementById('tabBtnMedications');
-            const tabBtnApp = document.getElementById('tabBtnAppointments');
-            const contentMed = document.getElementById('tabContentMedications');
-            const contentApp = document.getElementById('tabContentAppointments');
-
-            if (tab === 'medications') {
-                tabBtnMed.classList.add('active');
-                tabBtnApp.classList.remove('active');
-                contentMed.classList.remove('hidden');
-                contentMed.classList.add('block');
-                contentApp.classList.add('hidden');
-                contentApp.classList.remove('block');
-            } else {
-                tabBtnApp.classList.add('active');
-                tabBtnMed.classList.remove('active');
-                contentApp.classList.remove('hidden');
-                contentApp.classList.add('block');
-                contentMed.classList.add('hidden');
-                contentMed.classList.remove('block');
-            }
+            const tabs = ['medications', 'prescriptions', 'appointments'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                const content = document.getElementById(`tabContent${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                if (t === tab) {
+                    if (btn) btn.classList.add('active');
+                    if (content) {
+                        content.classList.remove('hidden');
+                        content.classList.add('block');
+                    }
+                } else {
+                    if (btn) btn.classList.remove('active');
+                    if (content) {
+                        content.classList.add('hidden');
+                        content.classList.remove('block');
+                    }
+                }
+            });
         }
 
         // Member filtering logic
         function filterByMember(member) {
-            // Update filter chip buttons
             const chips = document.querySelectorAll('.member-filter-chip');
             chips.forEach(chip => {
                 chip.classList.remove('active', 'border-primary', 'text-primary', 'shadow-xs');
                 chip.classList.add('border-slate-200', 'text-slate-600');
             });
-            event.currentTarget.classList.add('active', 'border-primary', 'text-primary', 'shadow-xs');
-            event.currentTarget.classList.remove('border-slate-200', 'text-slate-600');
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active', 'border-primary', 'text-primary', 'shadow-xs');
+                event.currentTarget.classList.remove('border-slate-200', 'text-slate-600');
+            }
 
             // Filter doses
             const doseItems = document.querySelectorAll('.dose-item');
@@ -790,83 +1062,171 @@
                 }
             });
 
-            showToast(`Đã lọc hiển thị cho thành viên: ${member === 'all' ? 'Tất cả' : member}`);
+            showToast(`Đã lọc danh sách cho: ${member === 'all' ? 'Tất cả thành viên' : member}`);
         }
 
-        // Dose confirmation logic
-        let takenDoses = 3;
-        const totalDoses = 6;
+        // AJAX POST to MarkAsTaken
+        async function toggleMarkAsTaken(scheduleId, medName, memberName, isUndo = false) {
+            const btn = document.getElementById(`btn-taken-${scheduleId}`);
+            const item = document.getElementById(`schedule-item-${scheduleId}`);
+            const title = document.getElementById(`schedule-title-${scheduleId}`);
+            const statusContainer = document.getElementById(`status-container-${scheduleId}`);
 
-        function markDoseTaken(itemId, actionContainerId, medName, memberName) {
-            const item = document.getElementById(itemId);
-            const container = document.getElementById(actionContainerId);
-            const now = new Date();
-            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            if (btn) btn.disabled = true;
 
-            if (item) {
-                item.classList.add('completed');
-                item.classList.remove('bg-sky-50/60', 'border-sky-200');
-                item.classList.add('bg-slate-50', 'border-emerald-200');
+            try {
+                const toggleQuery = isUndo ? '?toggle=true' : '';
+                const response = await fetch(`/Prescriptions/MarkAsTaken/${scheduleId}${toggleQuery}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Không thể kết nối máy chủ để cập nhật lịch.');
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    if (data.isTaken) {
+                        if (item) {
+                            item.classList.add('completed', 'bg-slate-50', 'border-emerald-200', 'opacity-90');
+                            item.classList.remove('bg-white', 'border-slate-200', 'shadow-2xs');
+                        }
+                        if (title) {
+                            title.classList.add('line-through', 'text-slate-400');
+                        }
+                        if (btn) {
+                            btn.classList.add('bg-emerald-600', 'text-white');
+                            btn.classList.remove('bg-slate-100', 'text-slate-500');
+                            btn.title = "Bấm để chuyển về chưa uống";
+                            btn.innerHTML = '<span class="material-symbols-outlined text-[17px]">check_circle</span>';
+                        }
+                        if (statusContainer) {
+                            statusContainer.innerHTML = `
+                                <div class="w-full py-1 px-2 rounded-lg bg-emerald-50 text-emerald-700 font-label-md flex items-center justify-between text-[11px] font-semibold border border-emerald-100">
+                                    <span class="flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[14px]">done_all</span>
+                                        <span>Đã uống ${data.takenAt || 'vừa xong'}</span>
+                                    </span>
+                                    <span class="text-[10px] text-emerald-600 underline cursor-pointer hover:text-emerald-800" onclick="toggleMarkAsTaken(${scheduleId}, '', '', true)">Hoàn tác</span>
+                                </div>
+                            `;
+                        }
+                        showToast(`Đã ghi nhận uống "${medName || 'thuốc'}" cho ${memberName || 'thành viên'}!`, 'success');
+                    } else {
+                        if (item) {
+                            item.classList.remove('completed', 'bg-slate-50', 'border-emerald-200', 'opacity-90');
+                            item.classList.add('bg-white', 'border-slate-200', 'shadow-2xs');
+                        }
+                        if (title) {
+                            title.classList.remove('line-through', 'text-slate-400');
+                        }
+                        if (btn) {
+                            btn.classList.remove('bg-emerald-600', 'text-white');
+                            btn.classList.add('bg-slate-100', 'text-slate-500');
+                            btn.title = "Bấm để đánh dấu ĐÃ UỐNG";
+                            btn.innerHTML = '<span class="material-symbols-outlined text-[17px]">radio_button_unchecked</span>';
+                        }
+                        if (statusContainer) {
+                            statusContainer.innerHTML = `
+                                <button type="button" 
+                                        onclick="toggleMarkAsTaken(${scheduleId}, '${medName}', '${memberName}')"
+                                        class="w-full py-1.5 px-2 rounded-lg bg-sky-50 hover:bg-sky-100 text-primary font-label-md flex items-center justify-center gap-1 text-xs font-bold border border-sky-200 transition-colors cursor-pointer">
+                                    <span class="material-symbols-outlined text-[15px]">check</span>
+                                    <span>Xác nhận đã uống</span>
+                                </button>
+                            `;
+                        }
+                        showToast('Đã chuyển trạng thái cữ thuốc về chưa uống.', 'info');
+                    }
+
+                    recalculateProgress();
+                } else {
+                    showToast(data.message || 'Không thể cập nhật cữ thuốc.', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Lỗi đường truyền hoặc máy chủ khi cập nhật.', 'error');
+            } finally {
+                if (btn) btn.disabled = false;
             }
-
-            if (container) {
-                container.innerHTML = `
-                    <div class="mt-1 w-full py-2 px-3 rounded-xl bg-emerald-50 text-emerald-700 font-label-md flex items-center justify-center gap-1.5 text-xs font-semibold border border-emerald-200">
-                        <span class="material-symbols-outlined text-[16px]">done_all</span>
-                        <span>Đã xác nhận uống lúc ${timeStr}</span>
-                    </div>
-                `;
-            }
-
-            takenDoses = Math.min(totalDoses, takenDoses + 1);
-            updateProgress();
-            showToast(`Đã ghi nhận uống thuốc "${medName}" cho ${memberName}!`, 'success');
         }
 
-        function skipDose(itemId, actionContainerId) {
-            const container = document.getElementById(actionContainerId);
-            if (container) {
-                container.innerHTML = `
-                    <div class="mt-1 w-full py-1.5 px-3 rounded-lg bg-slate-100 text-slate-500 font-label-md flex items-center justify-center gap-1 text-xs italic">
-                        <span>Đã bỏ qua cữ này</span>
-                    </div>
-                `;
-            }
-            showToast('Đã bỏ qua cữ uống này theo chỉ định khi cần.');
-        }
+        // Dynamic progress calculation
+        function recalculateProgress() {
+            const allDoses = document.querySelectorAll('.dose-item');
+            const completedDoses = document.querySelectorAll('.dose-item.completed');
+            const total = allDoses.length;
+            const taken = completedDoses.length;
+            const pct = total > 0 ? Math.round((taken / total) * 100) : 0;
 
-        function updateProgress() {
-            const progressPercent = Math.round((takenDoses / totalDoses) * 100);
             const progressBar = document.getElementById('doseProgressBar');
             const progressText = document.getElementById('doseProgressText');
             const progressPercentEl = document.getElementById('doseProgressPercent');
             const badge = document.getElementById('pendingDoseBadge');
 
-            if (progressBar) progressBar.style.width = `${progressPercent}%`;
-            if (progressText) progressText.innerText = `Đã uống ${takenDoses}/${totalDoses} liều`;
-            if (progressPercentEl) progressPercentEl.innerText = `${progressPercent}%`;
-            if (badge) badge.innerText = `${totalDoses - takenDoses} cữ còn`;
+            if (progressBar) progressBar.style.width = `${pct}%`;
+            if (progressText) progressText.innerText = `Đã uống ${taken}/${total} liều`;
+            if (progressPercentEl) progressPercentEl.innerText = `${pct}%`;
+            if (badge) badge.innerText = `${total - taken} cữ còn`;
         }
 
-        function sendReminderPush(medName, memberName) {
-            showToast(`Đã gửi thông báo đẩy và SMS nhắc "${medName}" đến điện thoại của ${memberName}!`, 'info');
-        }
+        // Dynamic drug item addition in create modal
+        let drugIndex = 1;
+        function addDrugItemRow() {
+            const container = document.getElementById('drugItemsList');
+            if (!container) return;
 
-        function remindOneDayBefore(dateStr, doctorHospital) {
-            showToast(`Đã thiết lập chuông nhắc nhở trước 1 ngày cho lịch hẹn ${dateStr} (${doctorHospital})!`, 'success');
-        }
+            const row = document.createElement('div');
+            row.className = 'drug-item-card p-3.5 rounded-xl bg-slate-50 border border-slate-200 relative';
+            row.innerHTML = `
+                <button type="button" onclick="this.closest('.drug-item-card').remove()" class="absolute top-2 right-2 text-rose-400 hover:text-rose-600 border-0 bg-transparent cursor-pointer" title="Xóa thuốc này">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-slate-600 font-semibold text-[11px] mb-1">Tên thuốc &amp; Hàm lượng *</label>
+                        <input type="text" name="Drugs[${drugIndex}].DrugName" required placeholder="Ví dụ: Metformin 500mg, Panadol..." class="w-full h-9 px-3 rounded-lg border border-slate-300 focus:border-primary text-xs outline-none bg-white" />
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-slate-600 font-semibold text-[11px] mb-1">Liều lượng mỗi lần *</label>
+                            <input type="text" name="Drugs[${drugIndex}].Dosage" value="1 viên" required placeholder="1 viên, 5ml" class="w-full h-9 px-3 rounded-lg border border-slate-300 focus:border-primary text-xs outline-none bg-white" />
+                        </div>
+                        <div>
+                            <label class="block text-slate-600 font-semibold text-[11px] mb-1">Cách dùng *</label>
+                            <input type="text" name="Drugs[${drugIndex}].MealTiming" value="Sau ăn 30 phút" placeholder="Sau ăn, Trước ăn" class="w-full h-9 px-3 rounded-lg border border-slate-300 focus:border-primary text-xs outline-none bg-white" />
+                        </div>
+                    </div>
+                </div>
 
-        function viewDirections(hospital, address, room) {
-            document.getElementById('directionsHospitalName').innerText = hospital;
-            document.getElementById('directionsHospitalAddress').innerText = address;
-            document.getElementById('directionsHospitalRoom').innerText = room;
-            document.getElementById('googleMapsLink').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hospital + ' ' + address)}`;
-            openModal('directionsModal');
-        }
-
-        function downloadAppointmentTicket() {
-            showToast('Đã tạo mã QR tiếp đón bệnh viện điện tử thành công!', 'success');
-            closeModal('directionsModal');
+                <div class="mt-2.5">
+                    <label class="block text-slate-600 font-semibold text-[11px] mb-1">Các cữ uống trong ngày:</label>
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-amber-400">
+                            <input type="checkbox" name="Drugs[${drugIndex}].Morning" value="true" checked class="rounded text-primary focus:ring-primary" />
+                            <span>Sáng (08:00)</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-sky-400">
+                            <input type="checkbox" name="Drugs[${drugIndex}].Noon" value="true" class="rounded text-primary focus:ring-primary" />
+                            <span>Trưa (12:00)</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-orange-400">
+                            <input type="checkbox" name="Drugs[${drugIndex}].Afternoon" value="true" class="rounded text-primary focus:ring-primary" />
+                            <span>Chiều (17:30)</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-indigo-400">
+                            <input type="checkbox" name="Drugs[${drugIndex}].Evening" value="true" checked class="rounded text-primary focus:ring-primary" />
+                            <span>Tối (20:30)</span>
+                        </label>
+                    </div>
+                </div>
+            `;
+            container.appendChild(row);
+            drugIndex++;
         }
 
         // Modal helpers
@@ -884,22 +1244,6 @@
                 modal.classList.add('hidden');
                 document.body.classList.remove('overflow-hidden');
             }
-        }
-
-        function toggleFilterDrawer() {
-            showToast('Bộ lọc nhanh theo cữ uống và thành viên đã sẵn sàng ở thanh công cụ.');
-        }
-
-        function handlePrescriptionSubmit(e) {
-            e.preventDefault();
-            closeModal('addPrescriptionModal');
-            showToast('Đã thêm đơn thuốc mới và đồng bộ vào lịch nhắc tự động!', 'success');
-        }
-
-        function handleAppointmentSubmit(e) {
-            e.preventDefault();
-            closeModal('addAppointmentModal');
-            showToast('Đã đặt lịch tái khám mới và bật thông báo nhắc nhở 24/7!', 'success');
         }
 
         // Toast notification system
@@ -938,8 +1282,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const tabParam = urlParams.get('tab');
-            if (tabParam === 'appointments') {
-                switchViewTab('appointments');
+            if (tabParam) {
+                switchViewTab(tabParam);
             }
         });
     </script>

@@ -28,6 +28,9 @@ public class Prescription
 
     public DateTime EndDate { get; set; }
 
+    [MaxLength(100)]
+    public string? DoctorName { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
